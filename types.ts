@@ -40,6 +40,7 @@ export interface UserProfile {
   startWeight: number;
   goalWeight: number;
   themePreference?: 'light' | 'dark';
+  activeChallengeId?: string | null; // Track the single active challenge
 }
 
 export interface FAQItem {

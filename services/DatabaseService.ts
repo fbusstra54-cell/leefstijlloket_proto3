@@ -30,11 +30,17 @@ class DatabaseService {
 
     const passwordHash = await hashPassword(password);
     
+    // Ensure activeChallengeId is set, even if profile doesn't have it explicitly yet (defensive)
+    const finalProfile: UserProfile = {
+        ...profile,
+        activeChallengeId: profile.activeChallengeId || null
+    };
+
     const newUser: User = {
       id: crypto.randomUUID(),
       email: email.toLowerCase(),
       passwordHash,
-      profile
+      profile: finalProfile
     };
 
     users.push(newUser);

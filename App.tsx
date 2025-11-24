@@ -43,7 +43,8 @@ import {
   Brain,
   Droplets,
   Zap,
-  Coffee
+  Coffee,
+  XCircle
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
@@ -89,6 +90,73 @@ type AnalysisResult = FoodAnalysisResult | ProductAnalysisResult;
 const IconMap: Record<string, React.ElementType> = {
   Flag, Flame, Trophy, Brain, Droplets, Activity
 };
+
+// ---- Animation Components ----
+
+const BroccoliAnimation = () => (
+  <div className="flex flex-col items-center justify-center animate-bounce-short">
+    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      {/* Stalk */}
+      <path d="M90 120 Q100 180 110 120" stroke="#86efac" strokeWidth="25" fill="none" strokeLinecap="round" />
+      <path d="M85 130 Q70 150 60 140" stroke="#86efac" strokeWidth="15" fill="none" strokeLinecap="round" />
+      <path d="M115 130 Q130 150 140 140" stroke="#86efac" strokeWidth="15" fill="none" strokeLinecap="round" />
+      
+      {/* Head (Florets) */}
+      <circle cx="100" cy="80" r="35" fill="#22c55e" />
+      <circle cx="70" cy="90" r="25" fill="#22c55e" />
+      <circle cx="130" cy="90" r="25" fill="#22c55e" />
+      <circle cx="85" cy="60" r="25" fill="#22c55e" />
+      <circle cx="115" cy="60" r="25" fill="#22c55e" />
+      
+      {/* Face */}
+      <circle cx="85" cy="85" r="4" fill="white" /> {/* Left Eye */}
+      
+      {/* Winking Right Eye */}
+      <ellipse cx="115" cy="85" rx="4" ry="4" fill="white">
+        <animate attributeName="ry" values="4;0.5;4" dur="2s" repeatCount="indefinite" />
+      </ellipse>
+      
+      {/* Smile */}
+      <path d="M90 100 Q100 110 110 100" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
+    </svg>
+    <h3 className="text-2xl font-bold text-green-600 mt-4">Gezond Bezig!</h3>
+    <p className="text-green-800">U bent nu Groente Kampioen!</p>
+  </div>
+);
+
+const SneakerAnimation = () => (
+  <div className="flex flex-col items-center justify-center">
+    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
+       <path d="M40 120 Q40 90 70 80 L130 80 Q160 80 160 110 L160 130 Q160 150 130 150 L70 150 Q40 150 40 120 Z" fill="#f59e0b" />
+       <path d="M50 120 L70 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
+       <path d="M80 120 L100 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
+       <path d="M110 120 L130 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
+       <rect x="40" y="145" width="120" height="10" rx="5" fill="#fff" />
+       {/* Speed lines */}
+       <path d="M170 100 L190 100" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+       <path d="M175 120 L195 120" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+    <h3 className="text-2xl font-bold text-amber-600 mt-4">In Beweging!</h3>
+    <p className="text-amber-800">Tijd om stappen te zetten.</p>
+  </div>
+);
+
+const ZenAnimation = () => (
+  <div className="flex flex-col items-center justify-center">
+    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <g className="animate-[spin_10s_linear_infinite]">
+         <circle cx="100" cy="100" r="40" fill="#6366f1" opacity="0.5" />
+         <circle cx="100" cy="60" r="30" fill="#818cf8" opacity="0.6" />
+         <circle cx="100" cy="140" r="30" fill="#818cf8" opacity="0.6" />
+         <circle cx="60" cy="100" r="30" fill="#818cf8" opacity="0.6" />
+         <circle cx="140" cy="100" r="30" fill="#818cf8" opacity="0.6" />
+      </g>
+      <circle cx="100" cy="100" r="15" fill="white" />
+    </svg>
+    <h3 className="text-2xl font-bold text-indigo-600 mt-4">Rust & Balans</h3>
+    <p className="text-indigo-800">Adem in, adem uit.</p>
+  </div>
+);
 
 // ---- Extracted Components (to prevent re-render issues) ----
 
@@ -252,8 +320,9 @@ export default function App() {
     energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5
   });
 
-  // Gamification State (Simulated based on data)
+  // Gamification State
   const [streakFrozen, setStreakFrozen] = useState(false);
+  const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -335,6 +404,28 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // ---- Environment / Theme Logic ----
+  
+  // Calculate dynamic theme based on active challenge
+  const activeChallenge = currentUser?.profile.activeChallengeId 
+    ? CHALLENGES.find(c => c.id === currentUser.profile.activeChallengeId) 
+    : null;
+
+  const getThemeWrapperClass = () => {
+    if (!activeChallenge) return "bg-slate-50 dark:bg-slate-950";
+    
+    switch(activeChallenge.category) {
+      case 'Voeding': 
+        return "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-slate-950 dark:to-green-950/20";
+      case 'Beweging':
+        return "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-950 dark:to-orange-950/20";
+      case 'Mentaal':
+        return "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-950 dark:to-indigo-950/20";
+      default:
+        return "bg-slate-50 dark:bg-slate-950";
+    }
+  };
+
   // ---- Handlers ----
 
   const showNotification = (msg: string) => {
@@ -369,7 +460,8 @@ export default function App() {
         name,
         startWeight,
         goalWeight,
-        themePreference: 'light'
+        themePreference: 'light',
+        activeChallengeId: null
       });
       
       setCurrentUser(newUser);
@@ -449,6 +541,44 @@ export default function App() {
       db.deleteWeightEntry(currentUser.id, id);
       setWeightEntries(prev => prev.filter(e => e.id !== id));
       showNotification(`Meting verwijderd, ${currentUser.profile.name}.`);
+    }
+  };
+
+  // --- Challenge Logic ---
+
+  const handleJoinChallenge = async (challenge: Challenge) => {
+    if (!currentUser) return;
+
+    // Enforce Single Challenge Rule
+    if (currentUser.profile.activeChallengeId && currentUser.profile.activeChallengeId !== challenge.id) {
+       if(!window.confirm("U doet al mee aan een andere challenge. U kunt maar één challenge tegelijk volgen om focus te behouden. Wilt u wisselen?")) {
+         return;
+       }
+    }
+
+    try {
+      // Trigger Animation
+      setActiveAnimation(challenge.category);
+      
+      // Update DB
+      const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: challenge.id });
+      setCurrentUser(updatedUser);
+      
+      // Close animation after 3.5s
+      setTimeout(() => setActiveAnimation(null), 3500);
+
+    } catch (e) {
+      console.error(e);
+      alert("Er ging iets mis bij het starten van de challenge.");
+    }
+  };
+
+  const handleLeaveChallenge = async () => {
+    if (!currentUser) return;
+    if (window.confirm("Weet u zeker dat u wilt stoppen met deze challenge?")) {
+       const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: null });
+       setCurrentUser(updatedUser);
+       showNotification("Challenge gestopt. Neem even rust en kies later een nieuwe.");
     }
   };
 
@@ -1209,12 +1339,18 @@ export default function App() {
     const streak = dates.size > 0 ? dates.size : 0;
 
     return (
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-8 animate-fade-in transition-colors duration-300">
+      <div className={`${getThemeWrapperClass()} min-h-screen py-8 animate-fade-in transition-all duration-700`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
             <div>
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Mijn Dashboard</h1>
               <p className="text-slate-500 dark:text-slate-400">Welkom terug, {currentUser.profile.name}.</p>
+              {activeChallenge && (
+                <div className="mt-2 inline-flex items-center text-xs font-semibold bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
+                  <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                  Huidige Focus: {activeChallenge.title}
+                </div>
+              )}
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-3">
                <div className={`px-4 py-2 rounded-lg border flex items-center text-sm font-medium transition-colors ${streakFrozen ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-100 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200'}`}>
@@ -1257,7 +1393,7 @@ export default function App() {
                    const Icon = IconMap[badge.iconName] || Award;
                    
                    return (
-                     <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-white dark:bg-slate-900 border-teal-200 dark:border-teal-800 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 opacity-60 grayscale'}`}>
+                     <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-white dark:bg-slate-900 border-teal-200 dark:border-teal-800 shadow-sm' : 'bg-white/50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 opacity-60 grayscale'}`}>
                         <div className={`p-3 rounded-full mb-3 ${isUnlocked ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
                            <Icon className="w-6 h-6" />
                         </div>
@@ -1334,24 +1470,43 @@ export default function App() {
                     Samen Gezond (Challenges)
                 </h3>
                 <div className="grid gap-4">
-                    {CHALLENGES.map(challenge => (
-                        <div key={challenge.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:border-teal-500/30 transition-colors">
-                            <div>
-                                <div className="flex items-center mb-1">
-                                    <span className="text-xs font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded mr-2">{challenge.category}</span>
-                                    <h4 className="font-bold text-slate-900 dark:text-white">{challenge.title}</h4>
-                                </div>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{challenge.description}</p>
-                                <div className="flex items-center text-xs text-slate-400">
-                                    <Users className="w-3 h-3 mr-1" />
-                                    {challenge.participants} deelnemers • {challenge.duration}
-                                </div>
-                            </div>
-                            <Button size="sm" variant="outline" onClick={() => showNotification("U doet mee aan deze challenge!")}>
-                                Doe mee
-                            </Button>
-                        </div>
-                    ))}
+                    {CHALLENGES.map(challenge => {
+                        const isActive = currentUser.profile.activeChallengeId === challenge.id;
+                        const isOtherActive = !!currentUser.profile.activeChallengeId && !isActive;
+
+                        return (
+                          <div key={challenge.id} className={`p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-center group transition-all duration-300 ${isActive ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 shadow-md transform scale-[1.02]' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-teal-500/30'}`}>
+                              <div className="mb-4 sm:mb-0">
+                                  <div className="flex items-center mb-1">
+                                      <span className="text-xs font-bold text-teal-600 bg-white dark:bg-teal-900/50 px-2 py-0.5 rounded mr-2 border border-teal-100 dark:border-teal-800">{challenge.category}</span>
+                                      <h4 className="font-bold text-slate-900 dark:text-white">{challenge.title}</h4>
+                                      {isActive && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">Actief</span>}
+                                  </div>
+                                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{challenge.description}</p>
+                                  <div className="flex items-center text-xs text-slate-400">
+                                      <Users className="w-3 h-3 mr-1" />
+                                      {challenge.participants} deelnemers • {challenge.duration}
+                                  </div>
+                              </div>
+                              <div className="flex space-x-2">
+                                {isActive ? (
+                                   <Button size="sm" variant="secondary" onClick={handleLeaveChallenge} className="bg-red-100 text-red-600 hover:bg-red-200 shadow-none">
+                                     Stoppen
+                                   </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    variant={isOtherActive ? "ghost" : "outline"} 
+                                    onClick={() => handleJoinChallenge(challenge)}
+                                    className={isOtherActive ? "text-slate-400" : ""}
+                                  >
+                                    {isOtherActive ? "Wissel" : "Doe mee"}
+                                  </Button>
+                                )}
+                              </div>
+                          </div>
+                        );
+                    })}
                 </div>
               </div>
               
@@ -1581,6 +1736,15 @@ export default function App() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
+      {/* Success Overlay Animation */}
+      {activeAnimation && (
+        <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-slate-950/95 flex items-center justify-center animate-fade-in">
+           {activeAnimation === 'Voeding' && <BroccoliAnimation />}
+           {activeAnimation === 'Beweging' && <SneakerAnimation />}
+           {activeAnimation === 'Mentaal' && <ZenAnimation />}
+        </div>
+      )}
+
       <Navbar />
       <main className="flex-grow">
         {currentView === 'home' && <HomeView />}
