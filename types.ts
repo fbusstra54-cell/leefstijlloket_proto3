@@ -41,6 +41,14 @@ export interface UserProfile {
   goalWeight: number;
   themePreference?: 'light' | 'dark';
   activeChallengeId?: string | null; // Track the single active challenge
+  
+  // New fields for Freeze/Pause logic
+  lastFreeFreezeDate?: string | null; // ISO Date string of last used free freeze
+  medicalPause?: {
+    isActive: boolean;
+    startDate: string;
+    endDate: string;
+  } | null;
 }
 
 export interface FAQItem {

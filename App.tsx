@@ -44,7 +44,10 @@ import {
   Droplets,
   Zap,
   Coffee,
-  XCircle
+  XCircle,
+  Calendar,
+  PauseCircle,
+  Stethoscope
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
@@ -320,9 +323,13 @@ export default function App() {
     energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5
   });
 
-  // Gamification State
-  const [streakFrozen, setStreakFrozen] = useState(false);
+  // Gamification & Modals State
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
+  const [showStopChallengeModal, setShowStopChallengeModal] = useState(false);
+  const [stopReason, setStopReason] = useState('');
+  const [showFreezeModal, setShowFreezeModal] = useState(false);
+  const [medicalStartDate, setMedicalStartDate] = useState('');
+  const [medicalEndDate, setMedicalEndDate] = useState('');
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -426,6 +433,37 @@ export default function App() {
     }
   };
 
+  // ---- Derived State for Freeze/Pause ----
+
+  const checkFreeFreezeEligibility = () => {
+    if (!currentUser?.profile.lastFreeFreezeDate) return true;
+    const lastDate = new Date(currentUser.profile.lastFreeFreezeDate);
+    const now = new Date();
+    return lastDate.getMonth() !== now.getMonth() || lastDate.getFullYear() !== now.getFullYear();
+  };
+
+  const isFreeFreezeEligible = checkFreeFreezeEligibility();
+
+  const isMedicalFreezeActive = () => {
+    if (!currentUser?.profile.medicalPause) return false;
+    const { isActive, startDate, endDate } = currentUser.profile.medicalPause;
+    if (!isActive) return false;
+    
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Normalize times to compare dates properly
+    now.setHours(0,0,0,0);
+    start.setHours(0,0,0,0);
+    end.setHours(23,59,59,999);
+    
+    return now >= start && now <= end;
+  };
+
+  const medicalFreezeActive = isMedicalFreezeActive();
+  const freeFreezeActive = !isFreeFreezeEligible && !medicalFreezeActive && new Date(currentUser?.profile.lastFreeFreezeDate || '').getDate() === new Date().getDate();
+
   // ---- Handlers ----
 
   const showNotification = (msg: string) => {
@@ -498,10 +536,19 @@ export default function App() {
     // Safety Check for Rapid Weight Loss (Ethical Safeguard)
     if (combinedWeight) {
         const newWeight = parseFloat(combinedWeight);
-        const lastEntry = weightEntries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+        
+        if (isNaN(newWeight)) {
+            alert("Voer een geldig getal in voor het gewicht.");
+            return;
+        }
+
+        // Clone before sorting to avoid state mutation
+        const sortedEntries = [...weightEntries].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const lastEntry = sortedEntries[0];
+
         if (lastEntry) {
             const diff = lastEntry.weight - newWeight;
-            // If lost more than 2kg since last entry (assuming roughly weekly/daily), show warning
+            // If lost more than 2.5kg since last entry (assuming roughly weekly/daily), show warning
             if (diff > 2.5) {
                 if(!window.confirm("Let op: U heeft een aanzienlijk gewichtsverlies ingevoerd. Snel gewichtsverlies kan ongezond zijn. Weet u zeker dat dit klopt? Wij raden aan bij twijfel uw arts te raadplegen.")) {
                     return;
@@ -522,8 +569,11 @@ export default function App() {
 
     // Save Weight (if entered) via DB Service
     if (combinedWeight) {
-      const newWeightEntry = db.addWeightEntry(currentUser.id, parseFloat(combinedWeight));
-      setWeightEntries(prev => [...prev, newWeightEntry]);
+      const parsedWeight = parseFloat(combinedWeight);
+      if (!isNaN(parsedWeight)) {
+        const newWeightEntry = db.addWeightEntry(currentUser.id, parsedWeight);
+        setWeightEntries(prev => [...prev, newWeightEntry]);
+      }
     }
 
     setCheckInEntries(prev => [...prev, newCheckIn]);
@@ -549,7 +599,6 @@ export default function App() {
   const handleJoinChallenge = async (challenge: Challenge) => {
     if (!currentUser) return;
 
-    // Enforce Single Challenge Rule
     if (currentUser.profile.activeChallengeId && currentUser.profile.activeChallengeId !== challenge.id) {
        if(!window.confirm("U doet al mee aan een andere challenge. U kunt maar één challenge tegelijk volgen om focus te behouden. Wilt u wisselen?")) {
          return;
@@ -557,14 +606,9 @@ export default function App() {
     }
 
     try {
-      // Trigger Animation
       setActiveAnimation(challenge.category);
-      
-      // Update DB
       const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: challenge.id });
       setCurrentUser(updatedUser);
-      
-      // Close animation after 3.5s
       setTimeout(() => setActiveAnimation(null), 3500);
 
     } catch (e) {
@@ -573,14 +617,72 @@ export default function App() {
     }
   };
 
-  const handleLeaveChallenge = async () => {
-    if (!currentUser) return;
-    if (window.confirm("Weet u zeker dat u wilt stoppen met deze challenge?")) {
-       const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: null });
-       setCurrentUser(updatedUser);
-       showNotification("Challenge gestopt. Neem even rust en kies later een nieuwe.");
-    }
+  const handleStopChallengeClick = () => {
+    setStopReason('');
+    setShowStopChallengeModal(true);
   };
+
+  const confirmStopChallenge = async () => {
+    if (!currentUser) return;
+    if (!stopReason.trim()) {
+        alert("Vul alstublieft een reden in.");
+        return;
+    }
+    
+    // Here we could log the reason to the DB if needed for analytics, 
+    // for now we just proceed with clearing the challenge.
+    
+    const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: null });
+    setCurrentUser(updatedUser);
+    setShowStopChallengeModal(false);
+    showNotification("Challenge gestopt. Neem even rust en kies later een nieuwe.");
+  };
+
+  // --- Streak Freeze / Pause Logic ---
+
+  const handleOpenFreezeModal = () => {
+      setShowFreezeModal(true);
+  };
+
+  const confirmFreeFreeze = async () => {
+      if(!currentUser) return;
+      if(!isFreeFreezeEligible) {
+          alert("U heeft deze maand al een gratis rustdag gebruikt.");
+          return;
+      }
+
+      const today = new Date().toISOString();
+      const updatedUser = await db.updateUserProfile(currentUser.id, { lastFreeFreezeDate: today });
+      setCurrentUser(updatedUser);
+      setShowFreezeModal(false);
+      showNotification("Gratis rustdag geactiveerd voor vandaag!");
+  };
+
+  const confirmMedicalFreeze = async () => {
+      if(!currentUser) return;
+      if(!medicalStartDate || !medicalEndDate) {
+          alert("Vul alstublieft beide datums in.");
+          return;
+      }
+      
+      if(new Date(medicalEndDate) < new Date(medicalStartDate)) {
+          alert("Einddatum kan niet voor de startdatum liggen.");
+          return;
+      }
+
+      const updatedUser = await db.updateUserProfile(currentUser.id, { 
+          medicalPause: {
+              isActive: true,
+              startDate: medicalStartDate,
+              endDate: medicalEndDate
+          }
+      });
+      setCurrentUser(updatedUser);
+      setShowFreezeModal(false);
+      showNotification("Medische pauze ingesteld. Uw streak is beschermd.");
+  };
+
+  // --- Generic ---
 
   const toggleTheme = async () => {
     if (currentUser) {
@@ -1353,14 +1455,28 @@ export default function App() {
               )}
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-3">
-               <div className={`px-4 py-2 rounded-lg border flex items-center text-sm font-medium transition-colors ${streakFrozen ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-100 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200'}`}>
-                 {streakFrozen ? <Coffee className="w-4 h-4 mr-2" /> : <Flame className="w-4 h-4 mr-2" />}
-                 {streakFrozen ? 'Rustdag Actief' : `${streak} Dagen Reeks`}
+               <div className={`px-4 py-2 rounded-lg border flex items-center text-sm font-medium transition-colors ${medicalFreezeActive ? 'bg-indigo-100 border-indigo-200 text-indigo-800 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-200' : (freeFreezeActive ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-100 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200')}`}>
+                 {medicalFreezeActive ? (
+                   <>
+                     <Stethoscope className="w-4 h-4 mr-2" />
+                     Medische Pauze
+                   </>
+                 ) : freeFreezeActive ? (
+                    <>
+                      <PauseCircle className="w-4 h-4 mr-2" />
+                      Rustdag Actief
+                    </>
+                 ) : (
+                    <>
+                      <Flame className="w-4 h-4 mr-2" />
+                      {streak} Dagen Reeks
+                    </>
+                 )}
                </div>
                {/* Streak Freeze Button (Autonomy & Ethical implementation) */}
-               {!streakFrozen && (
+               {!freeFreezeActive && !medicalFreezeActive && (
                  <button 
-                    onClick={() => { setStreakFrozen(true); showNotification("Rustdag ingesteld. Uw reeks blijft behouden!"); }}
+                    onClick={handleOpenFreezeModal}
                     className="text-xs text-slate-500 hover:text-teal-600 underline"
                  >
                    Rustdag nemen
@@ -1490,7 +1606,7 @@ export default function App() {
                               </div>
                               <div className="flex space-x-2">
                                 {isActive ? (
-                                   <Button size="sm" variant="secondary" onClick={handleLeaveChallenge} className="bg-red-100 text-red-600 hover:bg-red-200 shadow-none">
+                                   <Button size="sm" variant="secondary" onClick={handleStopChallengeClick} className="bg-red-100 text-red-600 hover:bg-red-200 shadow-none">
                                      Stoppen
                                    </Button>
                                 ) : (
@@ -1742,6 +1858,109 @@ export default function App() {
            {activeAnimation === 'Voeding' && <BroccoliAnimation />}
            {activeAnimation === 'Beweging' && <SneakerAnimation />}
            {activeAnimation === 'Mentaal' && <ZenAnimation />}
+        </div>
+      )}
+
+      {/* Stop Challenge Modal */}
+      {showStopChallengeModal && (
+        <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700">
+             <div className="flex justify-between items-center mb-4">
+               <h3 className="text-lg font-bold text-slate-900 dark:text-white">Challenge Stoppen</h3>
+               <button onClick={() => setShowStopChallengeModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+             </div>
+             <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+               Wat vervelend dat u stopt, maar uw gezondheid gaat voor. Kunt u aangeven waarom u stopt? Dit helpt ons de app te verbeteren.
+             </p>
+             <textarea 
+               className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 mb-4 text-sm dark:bg-slate-800 dark:text-white"
+               rows={3}
+               placeholder="Reden van stoppen..."
+               value={stopReason}
+               onChange={(e) => setStopReason(e.target.value)}
+             />
+             <div className="flex justify-end space-x-2">
+                <Button variant="ghost" onClick={() => setShowStopChallengeModal(false)}>Annuleren</Button>
+                <Button variant="secondary" onClick={confirmStopChallenge} className="bg-red-600 text-white hover:bg-red-700">Bevestigen & Stoppen</Button>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* Advanced Streak Freeze Modal */}
+      {showFreezeModal && (
+        <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+             <div className="flex justify-between items-center mb-6">
+               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                 <PauseCircle className="w-6 h-6 mr-2 text-teal-600" />
+                 Rust & Herstel
+               </h3>
+               <button onClick={() => setShowFreezeModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+             </div>
+             
+             {/* Option 1: Monthly Free Freeze */}
+             <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                <div className="flex items-start mb-3">
+                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 mr-3">
+                     <Calendar className="w-5 h-5" />
+                   </div>
+                   <div>
+                     <h4 className="font-bold text-slate-800 dark:text-white text-sm">Incidentele Rustdag</h4>
+                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">U kunt 1x per maand een gratis rustdag opnemen als het even niet lukt.</p>
+                   </div>
+                </div>
+                {isFreeFreezeEligible ? (
+                   <Button onClick={confirmFreeFreeze} className="w-full text-sm">
+                     Neem Gratis Rustdag
+                   </Button>
+                ) : (
+                   <div className="text-center p-2 bg-slate-200 dark:bg-slate-700 rounded text-xs text-slate-500">
+                     Reeds gebruikt deze maand. Beschikbaar op 1e van volgende maand.
+                   </div>
+                )}
+             </div>
+
+             {/* Option 2: Medical Freeze */}
+             <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                <div className="flex items-start mb-4">
+                   <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg text-indigo-600 mr-3">
+                     <Stethoscope className="w-5 h-5" />
+                   </div>
+                   <div>
+                     <h4 className="font-bold text-slate-800 dark:text-white text-sm">Medische Behandeling</h4>
+                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                       Wordt u behandeld of moet u herstellen? Vul de periode in waarin u niet kunt tracken. Uw streak blijft behouden.
+                     </p>
+                   </div>
+                </div>
+                
+                <div className="space-y-3">
+                   <div>
+                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Startdatum</label>
+                     <input 
+                       type="date" 
+                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                       value={medicalStartDate}
+                       onChange={(e) => setMedicalStartDate(e.target.value)}
+                     />
+                   </div>
+                   <div>
+                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Einddatum (schatting)</label>
+                     <input 
+                       type="date" 
+                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                       value={medicalEndDate}
+                       onChange={(e) => setMedicalEndDate(e.target.value)}
+                     />
+                   </div>
+                   <Button onClick={confirmMedicalFreeze} className="w-full text-sm mt-2 bg-indigo-600 hover:bg-indigo-700 text-white">
+                     Activeer Medische Pauze
+                   </Button>
+                </div>
+             </div>
+
+           </div>
         </div>
       )}
 
