@@ -14,8 +14,15 @@ const DB_KEYS = {
   USERS: 'prostavita_db_users',
   DATA_WEIGHTS: 'prostavita_db_weights',
   DATA_CHECKINS: 'prostavita_db_checkins',
-  SESSION: 'prostavita_db_session'
+  SESSION: 'prostavita_db_session',
+  RESET_TOKENS: 'prostavita_db_reset_tokens'
 };
+
+interface ResetToken {
+  email: string;
+  token: string;
+  expires: number;
+}
 
 class DatabaseService {
   // --- Auth & User Management ---
@@ -117,6 +124,63 @@ class DatabaseService {
     }
   }
 
+  // --- Password Reset Flow ---
+
+  async createPasswordResetToken(email: string): Promise<string> {
+    const users = this.getUsers();
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    
+    // Security: Do not reveal if email exists or not via error
+    if (!user) {
+      throw new Error('Als dit account bestaat, is er een email verzonden.');
+    }
+
+    const token = crypto.randomUUID();
+    const tokens = this.getResetTokens();
+    
+    // Remove old tokens for this email
+    const cleanTokens = tokens.filter(t => t.email !== email.toLowerCase());
+    
+    cleanTokens.push({
+      email: email.toLowerCase(),
+      token: token,
+      expires: Date.now() + 3600000 // 1 hour
+    });
+    
+    this.saveResetTokens(cleanTokens);
+    return token;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokens = this.getResetTokens();
+    const tokenRecord = tokens.find(t => t.token === token);
+
+    if (!tokenRecord) {
+      throw new Error('Ongeldige of verlopen reset link.');
+    }
+
+    if (Date.now() > tokenRecord.expires) {
+      // Cleanup expired
+      this.saveResetTokens(tokens.filter(t => t.token !== token));
+      throw new Error('Deze link is verlopen. Vraag een nieuwe aan.');
+    }
+
+    const users = this.getUsers();
+    const userIndex = users.findIndex(u => u.email.toLowerCase() === tokenRecord.email);
+
+    if (userIndex === -1) {
+      throw new Error('Gebruiker niet gevonden.');
+    }
+
+    // Update Password
+    const newHash = await hashPassword(newPassword);
+    users[userIndex].passwordHash = newHash;
+    this.saveUsers(users);
+
+    // Cleanup Token
+    this.saveResetTokens(tokens.filter(t => t.token !== token));
+  }
+
   // --- Data Management (Weights) ---
 
   getWeightEntries(userId: string): WeightEntry[] {
@@ -196,6 +260,15 @@ class DatabaseService {
   private getAllCheckins(): Record<string, DailyCheckIn[]> {
     const str = localStorage.getItem(DB_KEYS.DATA_CHECKINS);
     return str ? JSON.parse(str) : {};
+  }
+
+  private getResetTokens(): ResetToken[] {
+    const str = localStorage.getItem(DB_KEYS.RESET_TOKENS);
+    return str ? JSON.parse(str) : [];
+  }
+
+  private saveResetTokens(tokens: ResetToken[]): void {
+    localStorage.setItem(DB_KEYS.RESET_TOKENS, JSON.stringify(tokens));
   }
 }
 

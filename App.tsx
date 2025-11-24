@@ -47,7 +47,10 @@ import {
   XCircle,
   Calendar,
   PauseCircle,
-  Stethoscope
+  Stethoscope,
+  Mail,
+  Lock,
+  ArrowLeft
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
@@ -58,7 +61,7 @@ import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES } from './co
 import { db } from './services/DatabaseService';
 
 // ---- Views Enum ----
-type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis';
+type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis' | 'forgot-password' | 'reset-password';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -163,7 +166,7 @@ const ZenAnimation = () => (
 
 // ---- Extracted Components (to prevent re-render issues) ----
 
-const LoginView = ({ onLogin, onNavigateRegister }: { onLogin: (e: string, p: string) => void, onNavigateRegister: () => void }) => {
+const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin: (e: string, p: string) => void, onNavigateRegister: () => void, onNavigateForgot: () => void }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -191,7 +194,16 @@ const LoginView = ({ onLogin, onNavigateRegister }: { onLogin: (e: string, p: st
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Wachtwoord</label>
+              <div className="flex justify-between items-center mb-1">
+                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Wachtwoord</label>
+                 <button 
+                   type="button" 
+                   onClick={onNavigateForgot}
+                   className="text-xs font-medium text-teal-600 hover:text-teal-500"
+                 >
+                   Wachtwoord vergeten?
+                 </button>
+              </div>
               <input
                 type="password"
                 required
@@ -209,6 +221,109 @@ const LoginView = ({ onLogin, onNavigateRegister }: { onLogin: (e: string, p: st
             Nog geen account? <button onClick={onNavigateRegister} className="font-medium text-teal-600 hover:text-teal-500">Registreer hier</button>
           </p>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ForgotPasswordView = ({ onBack, onSubmit }: { onBack: () => void, onSubmit: (email: string) => void }) => {
+  const [email, setEmail] = useState('');
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+        <button onClick={onBack} className="flex items-center text-sm text-slate-500 hover:text-teal-600 mb-4">
+          <ArrowLeft className="w-4 h-4 mr-1" /> Terug naar inloggen
+        </button>
+        <div className="text-center">
+          <div className="mx-auto w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mb-4">
+            <Lock className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+          </div>
+          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Wachtwoord vergeten?</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Geen zorgen. Vul uw e-mailadres in en wij sturen u instructies om uw wachtwoord te resetten.
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={(e) => { e.preventDefault(); onSubmit(email); }}>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mailadres</label>
+            <input
+              type="email"
+              required
+              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              placeholder="naam@voorbeeld.nl"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="w-full flex justify-center">Stuur reset link</Button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const ResetPasswordView = ({ onReset }: { onReset: (p: string) => void }) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setError('Wachtwoorden komen niet overeen.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Wachtwoord moet minimaal 6 tekens zijn.');
+      return;
+    }
+    onReset(password);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+        <div className="text-center">
+          <div className="mx-auto w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+          </div>
+          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Nieuw Wachtwoord</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Kies een nieuw, veilig wachtwoord voor uw account.
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              {error}
+            </div>
+          )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nieuw Wachtwoord</label>
+              <input
+                type="password"
+                required
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bevestig Wachtwoord</label>
+              <input
+                type="password"
+                required
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <Button type="submit" className="w-full flex justify-center">Wachtwoord Opslaan</Button>
+        </form>
       </div>
     </div>
   );
@@ -309,6 +424,10 @@ export default function App() {
   // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Forgot Password Flow State
+  const [resetToken, setResetToken] = useState<string | null>(null);
+  const [simulatedEmail, setSimulatedEmail] = useState<{link: string, email: string} | null>(null);
 
   // App Data State (Linked to User ID)
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
@@ -507,6 +626,38 @@ export default function App() {
       showNotification('Account succesvol aangemaakt! U bent nu ingelogd.');
     } catch (err: any) {
       alert(err.message || 'Registratie mislukt');
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    try {
+      // In a real app, this sends an email. Here we simulate it.
+      // DatabaseService returns a token only if we want to simulate the link.
+      // For security in a real app, void would be returned.
+      const token = await db.createPasswordResetToken(email);
+      
+      // Simulate Email arriving
+      setSimulatedEmail({ link: token, email: email });
+      navigateTo('home');
+      showNotification('Als het account bestaat, is er een e-mail verzonden.');
+    } catch (err: any) {
+      // Even if error (email not found), show generic success to prevent enumeration,
+      // BUT for this demo app we might alert if it's strictly empty or invalid.
+      // For the "Happy Path" demo:
+      showNotification('Als het account bestaat, is er een e-mail verzonden.');
+    }
+  };
+
+  const handleResetPassword = async (newPassword: string) => {
+    if (!resetToken) return;
+    try {
+      await db.resetPassword(resetToken, newPassword);
+      setResetToken(null);
+      navigateTo('login');
+      showNotification('Wachtwoord succesvol gewijzigd. U kunt nu inloggen.');
+    } catch (err: any) {
+      alert(err.message || 'Resetten mislukt. De link is mogelijk verlopen.');
+      navigateTo('login');
     }
   };
 
@@ -1377,7 +1528,7 @@ export default function App() {
   const ArticleDetailView = () => {
     if (!selectedArticle) return null;
     return (
-      <div className="bg-white dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-900 min-h-screen py-12 animate-fade-in transition-colors duration-300">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
             onClick={() => navigateTo('knowledge')}
@@ -1861,6 +2012,37 @@ export default function App() {
         </div>
       )}
 
+      {/* Simulated Email Notification (For Demo Purposes) */}
+      {simulatedEmail && (
+        <div className="fixed top-24 right-4 z-[120] max-w-sm w-full bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-700 animate-slide-in-right overflow-hidden">
+          <div className="bg-slate-100 dark:bg-slate-900 p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <Mail className="w-4 h-4 text-slate-500" />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Nieuw bericht</span>
+            </div>
+            <button onClick={() => setSimulatedEmail(null)} className="text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="p-4">
+             <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1">Reset uw wachtwoord</h4>
+             <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Van: noreply@prostavita.nl</p>
+             <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
+               Beste gebruiker, klik hieronder om uw wachtwoord te herstellen.
+             </p>
+             <Button 
+               size="sm" 
+               className="w-full" 
+               onClick={() => {
+                 setResetToken(simulatedEmail.link);
+                 setSimulatedEmail(null);
+                 navigateTo('reset-password');
+               }}
+             >
+               Reset Link
+             </Button>
+          </div>
+        </div>
+      )}
+
       {/* Stop Challenge Modal */}
       {showStopChallengeModal && (
         <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
@@ -1967,7 +2149,9 @@ export default function App() {
       <Navbar />
       <main className="flex-grow">
         {currentView === 'home' && <HomeView />}
-        {currentView === 'login' && <LoginView onLogin={handleLogin} onNavigateRegister={() => navigateTo('register')} />}
+        {currentView === 'login' && <LoginView onLogin={handleLogin} onNavigateRegister={() => navigateTo('register')} onNavigateForgot={() => navigateTo('forgot-password')} />}
+        {currentView === 'forgot-password' && <ForgotPasswordView onBack={() => navigateTo('login')} onSubmit={handleForgotPassword} />}
+        {currentView === 'reset-password' && <ResetPasswordView onReset={handleResetPassword} />}
         {currentView === 'register' && <RegisterView onRegister={handleRegister} onNavigateLogin={() => navigateTo('login')} />}
         {currentView === 'knowledge' && <KnowledgeHubView />}
         {currentView === 'article-detail' && <ArticleDetailView />}
