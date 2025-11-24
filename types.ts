@@ -1,3 +1,4 @@
+
 export interface Article {
   id: string;
   title: string;
@@ -46,4 +47,22 @@ export interface FAQItem {
   question: string;
   answer: string;
   category: 'Algemeen' | 'Behandeling' | 'Leefstijl' | 'Hormoontherapie';
+}
+
+export interface Badge {
+  id: string;
+  title: string;
+  description: string;
+  iconName: string; // Reference to Lucide icon
+  conditionType: 'streak' | 'weight_entry' | 'knowledge' | 'checkin';
+  threshold: number;
+}
+
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  participants: number;
+  category: 'Voeding' | 'Beweging' | 'Mentaal';
 }

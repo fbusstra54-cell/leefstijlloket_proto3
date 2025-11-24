@@ -36,14 +36,21 @@ import {
   Check,
   ScanBarcode,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Flag,
+  Flame,
+  Trophy,
+  Brain,
+  Droplets,
+  Zap,
+  Coffee
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
 import { ArticleCard } from './components/ArticleCard';
 import { WeightChart } from './components/WeightChart';
-import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem } from './types';
-import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS } from './constants';
+import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge } from './types';
+import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES } from './constants';
 import { db } from './services/DatabaseService';
 
 // ---- Views Enum ----
@@ -77,6 +84,11 @@ interface ProductAnalysisResult {
 }
 
 type AnalysisResult = FoodAnalysisResult | ProductAnalysisResult;
+
+// ---- Icon Mapping for Badges ----
+const IconMap: Record<string, React.ElementType> = {
+  Flag, Flame, Trophy, Brain, Droplets, Activity
+};
 
 // ---- Extracted Components (to prevent re-render issues) ----
 
@@ -240,6 +252,9 @@ export default function App() {
     energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5
   });
 
+  // Gamification State (Simulated based on data)
+  const [streakFrozen, setStreakFrozen] = useState(false);
+
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
@@ -271,16 +286,16 @@ export default function App() {
           config: {
             systemInstruction: `Je bent VitaBot, een empathische, ondersteunende AI-leefstijlcoach voor de applicatie 'ProstaVita'. Jouw doelgroep bestaat uit mannen met prostaatkanker (of herstellende daarvan). 
             
-            Je geeft advies over:
-            1. Voeding (gezond eten, eiwitten, groenten).
-            2. Beweging (laagdrempelig bewegen, krachttraining, wandelen).
-            3. Mentale gezondheid (omgaan met stress, diagnose verwerken).
-            4. Leefstijl algemeen (slaap, stoppen met roken).
+            KERNWAARDEN (Self-Determination Theory):
+            1. Competentie: Geef de gebruiker het gevoel dat hij het kan. Vier kleine successen (Atomic Habits).
+            2. Autonomie: De gebruiker heeft de regie. Dwing niets op, maar bied opties.
+            3. Verbondenheid: Laat merken dat ze er niet alleen voor staan.
 
             BELANGRIJKE REGELS:
             1. DISCLAIMER: Je bent GEEN arts. Begin ELK antwoord dat ook maar enigszins medisch of gezondheidsgerelateerd is met de zin: "Let op: Ik ben een AI-assistent en geef geen medisch advies. Raadpleeg voor medische vragen altijd uw behandelend specialist."
-            2. Toon: Wees altijd positief, bemoedigend, respectvol en duidelijk. Gebruik 'u' als aanspreekvorm.
-            3. Houd antwoorden relatief beknopt en leesbaar.`,
+            2. Toon: Positief, bemoedigend, respectvol en duidelijk. Gebruik 'u' als aanspreekvorm.
+            3. Veiligheid: Als een gebruiker spreekt over extreem gewichtsverlies of eetstoornis-achtig gedrag, adviseer dan dringend om contact op te nemen met een arts of diëtist. Focus op GEZONDHEID, niet op esthetiek.
+            4. Motivatie: Gebruik technieken zoals 'habit stacking' (koppel nieuw gedrag aan bestaand gedrag) en focus op het proces, niet alleen het eindresultaat.`,
           },
         });
         chatSessionRef.current = chat;
@@ -388,6 +403,21 @@ export default function App() {
     e.preventDefault();
     if (!currentUser) return;
 
+    // Safety Check for Rapid Weight Loss (Ethical Safeguard)
+    if (combinedWeight) {
+        const newWeight = parseFloat(combinedWeight);
+        const lastEntry = weightEntries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+        if (lastEntry) {
+            const diff = lastEntry.weight - newWeight;
+            // If lost more than 2kg since last entry (assuming roughly weekly/daily), show warning
+            if (diff > 2.5) {
+                if(!window.confirm("Let op: U heeft een aanzienlijk gewichtsverlies ingevoerd. Snel gewichtsverlies kan ongezond zijn. Weet u zeker dat dit klopt? Wij raden aan bij twijfel uw arts te raadplegen.")) {
+                    return;
+                }
+            }
+        }
+    }
+
     // Save Check-in via DB Service
     const newCheckIn = db.addCheckIn(currentUser.id, {
       energy: checkInValues.energy,
@@ -409,7 +439,8 @@ export default function App() {
     // Reset sliders to middle
     setCheckInValues({ energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5 });
     
-    showNotification('Meting en reflectie opgeslagen in uw profiel! Goed bezig.');
+    // Gamification feedback
+    showNotification(`Meting opgeslagen! Goed bezig, ${currentUser.profile.name}. Uw streak loopt door!`);
   };
 
   const handleDeleteWeight = (id: string) => {
@@ -417,7 +448,7 @@ export default function App() {
     if (window.confirm('Weet u zeker dat u deze meting wilt verwijderen?')) {
       db.deleteWeightEntry(currentUser.id, id);
       setWeightEntries(prev => prev.filter(e => e.id !== id));
-      showNotification('Meting verwijderd.');
+      showNotification(`Meting verwijderd, ${currentUser.profile.name}.`);
     }
   };
 
@@ -1186,10 +1217,19 @@ export default function App() {
               <p className="text-slate-500 dark:text-slate-400">Welkom terug, {currentUser.profile.name}.</p>
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-3">
-               <div className="bg-amber-100 dark:bg-amber-900/30 px-4 py-2 rounded-lg border border-amber-200 dark:border-amber-800 flex items-center text-sm text-amber-800 dark:text-amber-200 font-medium">
-                 <Award className="w-4 h-4 mr-2" />
-                 {streak} Dagen Actief
+               <div className={`px-4 py-2 rounded-lg border flex items-center text-sm font-medium transition-colors ${streakFrozen ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-100 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200'}`}>
+                 {streakFrozen ? <Coffee className="w-4 h-4 mr-2" /> : <Flame className="w-4 h-4 mr-2" />}
+                 {streakFrozen ? 'Rustdag Actief' : `${streak} Dagen Reeks`}
                </div>
+               {/* Streak Freeze Button (Autonomy & Ethical implementation) */}
+               {!streakFrozen && (
+                 <button 
+                    onClick={() => { setStreakFrozen(true); showNotification("Rustdag ingesteld. Uw reeks blijft behouden!"); }}
+                    className="text-xs text-slate-500 hover:text-teal-600 underline"
+                 >
+                   Rustdag nemen
+                 </button>
+               )}
             </div>
           </div>
 
@@ -1200,7 +1240,35 @@ export default function App() {
             </div>
           )}
 
-          {/* Stats Cards */}
+          {/* Gamification: Badges Section (Competence) */}
+          <div className="mb-8">
+             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
+                <Award className="w-5 h-5 mr-2 text-teal-600" />
+                Mijlpalen & Badges
+             </h3>
+             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {BADGES.map((badge) => {
+                   // Simple simulated logic to determine unlocked state
+                   let isUnlocked = false;
+                   if (badge.conditionType === 'streak') isUnlocked = streak >= badge.threshold;
+                   if (badge.conditionType === 'weight_entry') isUnlocked = weightEntries.length >= badge.threshold;
+                   if (badge.conditionType === 'checkin') isUnlocked = checkInEntries.length >= badge.threshold;
+                   
+                   const Icon = IconMap[badge.iconName] || Award;
+                   
+                   return (
+                     <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-white dark:bg-slate-900 border-teal-200 dark:border-teal-800 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 opacity-60 grayscale'}`}>
+                        <div className={`p-3 rounded-full mb-3 ${isUnlocked ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
+                           <Icon className="w-6 h-6" />
+                        </div>
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{badge.title}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{badge.description}</p>
+                     </div>
+                   );
+                })}
+             </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-4">
@@ -1251,13 +1319,41 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Chart & History */}
+            {/* Left Column: Chart & History & Challenges */}
             <div className="lg:col-span-2 space-y-8">
               <WeightChart 
                 data={weightEntries} 
                 startWeight={currentUser.profile.startWeight}
                 goalWeight={currentUser.profile.goalWeight}
               />
+
+              {/* Gamification: Challenges (Social & Autonomy) */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
+                    <Zap className="w-5 h-5 mr-2 text-amber-500" />
+                    Samen Gezond (Challenges)
+                </h3>
+                <div className="grid gap-4">
+                    {CHALLENGES.map(challenge => (
+                        <div key={challenge.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:border-teal-500/30 transition-colors">
+                            <div>
+                                <div className="flex items-center mb-1">
+                                    <span className="text-xs font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded mr-2">{challenge.category}</span>
+                                    <h4 className="font-bold text-slate-900 dark:text-white">{challenge.title}</h4>
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{challenge.description}</p>
+                                <div className="flex items-center text-xs text-slate-400">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {challenge.participants} deelnemers • {challenge.duration}
+                                </div>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => showNotification("U doet mee aan deze challenge!")}>
+                                Doe mee
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+              </div>
               
               <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
                 <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Metingen Geschiedenis</h4>
@@ -1315,6 +1411,9 @@ export default function App() {
                           <span className="text-slate-400 sm:text-sm">kg</span>
                         </div>
                       </div>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        * Wij geven een waarschuwing bij te snel gewichtsverlies.
+                      </p>
                     </div>
 
                     <div className="h-px bg-slate-200 dark:bg-slate-700 my-6"></div>

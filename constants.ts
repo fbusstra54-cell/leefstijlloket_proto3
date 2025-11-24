@@ -1,4 +1,5 @@
-import { Article, FAQItem } from './types';
+
+import { Article, FAQItem, Badge, Challenge } from './types';
 
 export const ARTICLES: Article[] = [
   {
@@ -97,4 +98,18 @@ export const CHECKIN_QUESTIONS = [
   { id: 'mood', label: 'Hoe gaat het met mijn gemoedstoestand?', minLabel: 'Niet goed', maxLabel: 'Heel goed' },
   { id: 'stress', label: 'Hoeveel stress ervaar ik nu?', minLabel: 'Veel stress', maxLabel: 'Geen stress' },
   { id: 'sleep', label: 'Hoe goed is mijn kwaliteit van slaap?', minLabel: 'Haast geen slaap', maxLabel: 'Heel goede slaap' },
+];
+
+export const BADGES: Badge[] = [
+  { id: 'b1', title: 'De Eerste Stap', description: 'Maak uw eerste gewichtsmeting aan.', iconName: 'Flag', conditionType: 'weight_entry', threshold: 1 },
+  { id: 'b2', title: 'Volhouder', description: 'Registreer 3 dagen achter elkaar uw voortgang.', iconName: 'Flame', conditionType: 'streak', threshold: 3 },
+  { id: 'b3', title: 'Weekwinnaar', description: 'Een volledige week aan uw gezondheid gewerkt.', iconName: 'Trophy', conditionType: 'streak', threshold: 7 },
+  { id: 'b4', title: 'Reflectie Meester', description: 'Vul 5 keer uw dagelijkse check-in in.', iconName: 'Brain', conditionType: 'checkin', threshold: 5 },
+  { id: 'b5', title: 'Waterkoning', description: 'Drink voldoende water (Challenge)', iconName: 'Droplets', conditionType: 'streak', threshold: 14 } // Simulated
+];
+
+export const CHALLENGES: Challenge[] = [
+  { id: 'c1', title: 'Groente Kampioen', description: 'Eet elke dag 200 gram groente.', duration: '7 dagen', participants: 342, category: 'Voeding' },
+  { id: 'c2', title: 'Dagelijkse Ommetje', description: 'Wandel 20 minuten per dag.', duration: '30 dagen', participants: 815, category: 'Beweging' },
+  { id: 'c3', title: 'Rust in het Hoofd', description: '5 minuten ademhalingsoefeningen.', duration: '14 dagen', participants: 124, category: 'Mentaal' },
 ];
