@@ -35,12 +35,15 @@ export interface DailyCheckIn {
   sleep: number; // 1-10
 }
 
+export type CarePathId = 'active_surveillance' | 'treatment_lt_6m' | 'treatment_6_12w' | 'high_risk';
+
 export interface UserProfile {
   name: string; // Pseudonym preferred
   startWeight: number;
   goalWeight: number;
   themePreference?: 'light' | 'dark';
   activeChallengeId?: string | null; // Track the single active challenge
+  carePathId?: CarePathId | null; // The selected medical care path
   
   // New fields for Freeze/Pause logic
   lastFreeFreezeDate?: string | null; // ISO Date string of last used free freeze
@@ -74,4 +77,20 @@ export interface Challenge {
   duration: string;
   participants: number;
   category: 'Voeding' | 'Beweging' | 'Mentaal';
+}
+
+export type ReactionType = 'heart' | 'muscle' | 'clap';
+
+export interface CommunityPost {
+  id: string;
+  userPseudonym: string;
+  actionType: 'challenge_join' | 'streak_milestone' | 'badge_earned' | 'checkin_complete';
+  content: string; // System generated text, e.g. "Heeft 7 dagen volgehouden!"
+  timestamp: string;
+  reactions: {
+    heart: number;
+    muscle: number;
+    clap: number;
+  };
+  currentUserReacted?: ReactionType[]; // Local tracking for UI
 }

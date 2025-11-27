@@ -1,5 +1,6 @@
 
-import { Article, FAQItem, Badge, Challenge } from './types';
+import { Article, FAQItem, Badge, Challenge, CommunityPost } from './types';
+import { Activity, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export const ARTICLES: Article[] = [
   {
@@ -112,4 +113,66 @@ export const CHALLENGES: Challenge[] = [
   { id: 'c1', title: 'Groente Kampioen', description: 'Eet elke dag 200 gram groente.', duration: '7 dagen', participants: 342, category: 'Voeding' },
   { id: 'c2', title: 'Dagelijkse Ommetje', description: 'Wandel 20 minuten per dag.', duration: '30 dagen', participants: 815, category: 'Beweging' },
   { id: 'c3', title: 'Rust in het Hoofd', description: '5 minuten ademhalingsoefeningen.', duration: '14 dagen', participants: 124, category: 'Mentaal' },
+];
+
+export const CARE_PATHS = [
+  { 
+    id: 'active_surveillance', 
+    title: 'Active Surveillance', 
+    description: 'Controlefase waarin leefstijl kan helpen uitstel van behandeling te verlengen.',
+    icon: Activity
+  },
+  { 
+    id: 'treatment_lt_6m', 
+    title: 'Behandeling < 6 maanden', 
+    description: 'Voorbereiding op operatie of bestraling. Focus op conditieopbouw.',
+    icon: Clock
+  },
+  { 
+    id: 'treatment_6_12w', 
+    title: 'Behandeling binnen 6-12 weken', 
+    description: 'Intensieve, korte termijn voorbereiding voor optimaal herstel.',
+    icon: AlertTriangle
+  },
+  { 
+    id: 'high_risk', 
+    title: 'High-risk / Complex', 
+    description: 'Geavanceerde fase of complicaties. Leefstijl als ondersteuning bij zware therapie.',
+    icon: ShieldAlert
+  },
+];
+
+export const MOCK_COMMUNITY_POSTS: CommunityPost[] = [
+  {
+    id: 'p1',
+    userPseudonym: 'WandelFan_55',
+    actionType: 'challenge_join',
+    content: 'Doet mee aan het "Dagelijkse Ommetje"!',
+    timestamp: '2023-10-25T10:30:00Z',
+    reactions: { heart: 5, muscle: 2, clap: 8 }
+  },
+  {
+    id: 'p2',
+    userPseudonym: 'FitNa50',
+    actionType: 'streak_milestone',
+    content: 'Heeft een reeks van 7 dagen behaald!',
+    timestamp: '2023-10-25T09:15:00Z',
+    reactions: { heart: 12, muscle: 8, clap: 15 }
+  },
+  {
+    id: 'p3',
+    userPseudonym: 'Anonieme Gebruiker',
+    actionType: 'badge_earned',
+    content: 'Heeft de badge "De Eerste Stap" verdiend.',
+    timestamp: '2023-10-24T18:45:00Z',
+    reactions: { heart: 3, muscle: 0, clap: 4 }
+  },
+  {
+    id: 'p4',
+    userPseudonym: 'GezondEten',
+    actionType: 'checkin_complete',
+    content: 'Heeft vandaag gereflecteerd op gezondheid.',
+    timestamp: '2023-10-24T14:20:00Z',
+    reactions: { heart: 6, muscle: 1, clap: 1 }
+  }
 ];

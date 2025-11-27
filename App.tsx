@@ -50,18 +50,20 @@ import {
   Stethoscope,
   Mail,
   Lock,
-  ArrowLeft
+  ArrowLeft,
+  Hand,
+  Share2
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
 import { ArticleCard } from './components/ArticleCard';
 import { WeightChart } from './components/WeightChart';
-import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge } from './types';
-import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES } from './constants';
+import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge, CommunityPost, ReactionType } from './types';
+import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES, CARE_PATHS, MOCK_COMMUNITY_POSTS } from './constants';
 import { db } from './services/DatabaseService';
 
 // ---- Views Enum ----
-type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis' | 'forgot-password' | 'reset-password';
+type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis' | 'forgot-password' | 'reset-password' | 'community';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -130,17 +132,59 @@ const BroccoliAnimation = () => (
   </div>
 );
 
-const SneakerAnimation = () => (
+const RunnerAnimation = () => (
   <div className="flex flex-col items-center justify-center">
-    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="animate-pulse">
-       <path d="M40 120 Q40 90 70 80 L130 80 Q160 80 160 110 L160 130 Q160 150 130 150 L70 150 Q40 150 40 120 Z" fill="#f59e0b" />
-       <path d="M50 120 L70 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
-       <path d="M80 120 L100 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
-       <path d="M110 120 L130 90" stroke="white" strokeWidth="4" strokeLinecap="round" />
-       <rect x="40" y="145" width="120" height="10" rx="5" fill="#fff" />
-       {/* Speed lines */}
-       <path d="M170 100 L190 100" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
-       <path d="M175 120 L195 120" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" />
+    <svg width="240" height="240" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      {/* Moving Ground Lines - Creates speed effect */}
+      <g stroke="#fbbf24" strokeWidth="2" strokeLinecap="round">
+        <line x1="20" y1="160" x2="60" y2="160">
+          <animate attributeName="x1" from="200" to="-50" dur="0.8s" repeatCount="indefinite" />
+          <animate attributeName="x2" from="240" to="-10" dur="0.8s" repeatCount="indefinite" />
+        </line>
+        <line x1="80" y1="165" x2="140" y2="165" opacity="0.6">
+          <animate attributeName="x1" from="200" to="-60" dur="0.6s" repeatCount="indefinite" />
+          <animate attributeName="x2" from="260" to="0" dur="0.6s" repeatCount="indefinite" />
+        </line>
+      </g>
+
+      {/* Runner Group - Bobs up and down */}
+      <g transform="translate(100, 100)">
+         <animateTransform attributeName="transform" type="translate" values="100,100; 100,95; 100,100" dur="0.3s" repeatCount="indefinite" />
+         
+         {/* Head */}
+         <circle cx="0" cy="-50" r="12" fill="#d97706" />
+         
+         {/* Torso */}
+         <line x1="0" y1="-38" x2="10" y2="10" stroke="#d97706" strokeWidth="8" strokeLinecap="round" />
+
+         {/* Back Leg */}
+         <g>
+            <path d="M10 10 L-10 30 L-25 25" stroke="#b45309" strokeWidth="6" fill="none" strokeLinecap="round">
+              <animate attributeName="d" values="M10 10 L-10 30 L-25 25; M10 10 L25 30 L25 50; M10 10 L-10 30 L-25 25" dur="0.6s" repeatCount="indefinite" />
+            </path>
+         </g>
+
+         {/* Back Arm */}
+         <g>
+            <path d="M5 -30 L20 -15 L35 -25" stroke="#b45309" strokeWidth="5" fill="none" strokeLinecap="round">
+               <animate attributeName="d" values="M5 -30 L20 -15 L35 -25; M5 -30 L-15 -15 L-10 -5; M5 -30 L20 -15 L35 -25" dur="0.6s" repeatCount="indefinite" />
+            </path>
+         </g>
+
+         {/* Front Leg */}
+         <g>
+            <path d="M10 10 L25 30 L25 50" stroke="#f59e0b" strokeWidth="6" fill="none" strokeLinecap="round">
+              <animate attributeName="d" values="M10 10 L25 30 L25 50; M10 10 L-10 30 L-25 25; M10 10 L25 30 L25 50" dur="0.6s" repeatCount="indefinite" />
+            </path>
+         </g>
+
+         {/* Front Arm */}
+         <g>
+             <path d="M5 -30 L-15 -15 L-10 -5" stroke="#f59e0b" strokeWidth="5" fill="none" strokeLinecap="round">
+               <animate attributeName="d" values="M5 -30 L-15 -15 L-10 -5; M5 -30 L20 -15 L35 -25; M5 -30 L-15 -15 L-10 -5" dur="0.6s" repeatCount="indefinite" />
+             </path>
+         </g>
+      </g>
     </svg>
     <h3 className="text-2xl font-bold text-amber-600 mt-4">In Beweging!</h3>
     <p className="text-amber-800">Tijd om stappen te zetten.</p>
@@ -149,15 +193,36 @@ const SneakerAnimation = () => (
 
 const ZenAnimation = () => (
   <div className="flex flex-col items-center justify-center">
-    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <g className="animate-[spin_10s_linear_infinite]">
-         <circle cx="100" cy="100" r="40" fill="#6366f1" opacity="0.5" />
-         <circle cx="100" cy="60" r="30" fill="#818cf8" opacity="0.6" />
-         <circle cx="100" cy="140" r="30" fill="#818cf8" opacity="0.6" />
-         <circle cx="60" cy="100" r="30" fill="#818cf8" opacity="0.6" />
-         <circle cx="140" cy="100" r="30" fill="#818cf8" opacity="0.6" />
+    <svg width="240" height="240" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      {/* Aura / Breath */}
+      <circle cx="100" cy="110" r="50" fill="#a5b4fc" opacity="0.4">
+        <animate attributeName="r" values="50;75;50" dur="4s" repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0.4;0;0.4" dur="4s" repeatCount="indefinite" />
+      </circle>
+      <circle cx="100" cy="110" r="40" fill="#818cf8" opacity="0.3">
+        <animate attributeName="r" values="40;60;40" dur="4s" repeatCount="indefinite" begin="0.5s" />
+      </circle>
+
+      {/* Floating Body Group */}
+      <g>
+         <animateTransform attributeName="transform" type="translate" values="0,0; 0,-8; 0,0" dur="4s" repeatCount="indefinite" />
+         
+         {/* Legs (Lotus/Kneeling base) */}
+         <path d="M60 150 Q100 165 140 150 Q160 145 150 130 Q120 140 100 140 Q80 140 50 130 Q40 145 60 150" fill="#4f46e5" />
+         
+         {/* Torso */}
+         <path d="M70 135 L80 80 Q100 75 120 80 L130 135" fill="#4f46e5" />
+         
+         {/* Shoulders/Arms */}
+         <path d="M80 85 Q60 100 65 120 L80 130" stroke="#4f46e5" strokeWidth="8" strokeLinecap="round" fill="none" />
+         <path d="M120 85 Q140 100 135 120 L120 130" stroke="#4f46e5" strokeWidth="8" strokeLinecap="round" fill="none" />
+         
+         {/* Head */}
+         <circle cx="100" cy="65" r="18" fill="#4f46e5" />
+         
+         {/* Closed Eyes */}
+         <path d="M92 65 Q96 68 100 65 Q104 68 108 65" stroke="#e0e7ff" strokeWidth="1.5" fill="none" opacity="0.7" />
       </g>
-      <circle cx="100" cy="100" r="15" fill="white" />
     </svg>
     <h3 className="text-2xl font-bold text-indigo-600 mt-4">Rust & Balans</h3>
     <p className="text-indigo-800">Adem in, adem uit.</p>
@@ -449,6 +514,10 @@ export default function App() {
   const [showFreezeModal, setShowFreezeModal] = useState(false);
   const [medicalStartDate, setMedicalStartDate] = useState('');
   const [medicalEndDate, setMedicalEndDate] = useState('');
+  const [pendingChallenge, setPendingChallenge] = useState<Challenge | null>(null);
+
+  // Community State
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>(MOCK_COMMUNITY_POSTS);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -479,7 +548,7 @@ export default function App() {
         const chat = ai.chats.create({
           model: 'gemini-3-pro-preview',
           config: {
-            systemInstruction: `Je bent VitaBot, een empathische, ondersteunende AI-leefstijlcoach voor de applicatie 'ProstaVita'. Jouw doelgroep bestaat uit mannen met prostaatkanker (of herstellende daarvan). 
+            systemInstruction: `Je bent VitaBot, een empathische, ondersteunende AI-leefstijlcoach voor de applicatie 'Fit, door dik en dun'. Jouw doelgroep bestaat uit mannen met prostaatkanker (of herstellende daarvan). 
             
             KERNWAARDEN (Self-Determination Theory):
             1. Competentie: Geef de gebruiker het gevoel dat hij het kan. Vier kleine successen (Atomic Habits).
@@ -680,6 +749,27 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  // Helper function to ask about sharing
+  const askToShareInCommunity = (actionType: CommunityPost['actionType'], content: string) => {
+    if (!currentUser) return;
+    
+    // In a real app, we would have a proper modal. For simplicity, we use confirm here or just a toast with action.
+    // Let's use a non-intrusive approach: Auto-add locally for the session or skip. 
+    // To make it ethical (Opt-in), we should prompt.
+    if (window.confirm("Goed bezig! Wil je deze mijlpaal anoniem delen in Het Trefpunt om anderen te inspireren?")) {
+        const newPost: CommunityPost = {
+            id: crypto.randomUUID(),
+            userPseudonym: currentUser.profile.name || "Anonieme Held",
+            actionType,
+            content,
+            timestamp: new Date().toISOString(),
+            reactions: { heart: 0, muscle: 0, clap: 0 }
+        };
+        setCommunityPosts(prev => [newPost, ...prev]);
+        showNotification("Gedeeld in Het Trefpunt!");
+    }
+  };
+
   const handleCombinedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
@@ -734,6 +824,11 @@ export default function App() {
     
     // Gamification feedback
     showNotification(`Meting opgeslagen! Goed bezig, ${currentUser.profile.name}. Uw streak loopt door!`);
+    
+    // Trigger sharing logic
+    setTimeout(() => {
+        askToShareInCommunity('checkin_complete', 'Heeft een dagelijkse check-in voltooid.');
+    }, 1500);
   };
 
   const handleDeleteWeight = (id: string) => {
@@ -760,7 +855,12 @@ export default function App() {
       setActiveAnimation(challenge.category);
       const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: challenge.id });
       setCurrentUser(updatedUser);
-      setTimeout(() => setActiveAnimation(null), 3500);
+      
+      // Share logic
+      setTimeout(() => {
+          setActiveAnimation(null);
+          askToShareInCommunity('challenge_join', `Is gestart met de challenge: ${challenge.title}`);
+      }, 3500);
 
     } catch (e) {
       console.error(e);
@@ -887,6 +987,30 @@ export default function App() {
     }
   };
 
+  const handleReaction = (postId: string, type: ReactionType) => {
+      setCommunityPosts(prevPosts => prevPosts.map(post => {
+          if (post.id === postId) {
+              const alreadyReacted = post.currentUserReacted?.includes(type);
+              
+              let newReactions = { ...post.reactions };
+              let newUserReacted = post.currentUserReacted ? [...post.currentUserReacted] : [];
+
+              if (alreadyReacted) {
+                  // Unlike
+                  newReactions[type] = Math.max(0, newReactions[type] - 1);
+                  newUserReacted = newUserReacted.filter(t => t !== type);
+              } else {
+                  // Like
+                  newReactions[type] = newReactions[type] + 1;
+                  newUserReacted.push(type);
+              }
+
+              return { ...post, reactions: newReactions, currentUserReacted: newUserReacted };
+          }
+          return post;
+      }));
+  };
+
   // ---- Components ----
 
   if (isLoading) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div></div>;
@@ -897,7 +1021,7 @@ export default function App() {
         <div className="flex justify-between h-16">
           <div className="flex items-center cursor-pointer" onClick={() => navigateTo('home')}>
             <Heart className="h-8 w-8 text-teal-600 fill-teal-600" />
-            <span className="ml-2 text-xl font-bold text-slate-800 dark:text-white tracking-tight">ProstaVita</span>
+            <span className="ml-2 text-xl font-bold text-slate-800 dark:text-white tracking-tight">Fit, door dik en dun</span>
           </div>
           
           {/* Desktop Menu */}
@@ -929,6 +1053,12 @@ export default function App() {
                   className={`text-sm font-medium ${currentView === 'dashboard' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
                 >
                   Dashboard
+                </button>
+                <button 
+                  onClick={() => navigateTo('community')}
+                  className={`text-sm font-medium ${currentView === 'community' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
+                >
+                  Het Trefpunt
                 </button>
                 <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
                 <button 
@@ -975,6 +1105,7 @@ export default function App() {
              {currentUser ? (
                <>
                  <button onClick={() => navigateTo('dashboard')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Mijn Dashboard</button>
+                 <button onClick={() => navigateTo('community')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Het Trefpunt</button>
                  <button onClick={() => navigateTo('settings')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Instellingen</button>
                  <button onClick={handleLogout} className="block w-full text-left py-3 text-red-600 font-medium">Uitloggen</button>
                </>
@@ -990,7 +1121,86 @@ export default function App() {
     </nav>
   );
 
-  // ---- Main Views ----
+  const CommunityView = () => {
+      return (
+          <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="mb-8 text-center">
+                      <div className="inline-flex items-center justify-center p-3 bg-teal-100 dark:bg-teal-900/30 rounded-full text-teal-600 dark:text-teal-400 mb-4">
+                          <Users className="w-8 h-8" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Het Trefpunt</h2>
+                      <p className="text-slate-600 dark:text-slate-400">
+                          Een veilige plek om elkaar aan te moedigen. Deel uw successen (anoniem) en steun anderen.
+                      </p>
+                  </div>
+
+                  <div className="space-y-6">
+                      {communityPosts.map(post => {
+                          const getIcon = () => {
+                              switch(post.actionType) {
+                                  case 'badge_earned': return <Award className="w-5 h-5 text-amber-500" />;
+                                  case 'challenge_join': return <Flag className="w-5 h-5 text-blue-500" />;
+                                  case 'streak_milestone': return <Flame className="w-5 h-5 text-orange-500" />;
+                                  case 'checkin_complete': return <CheckCircle className="w-5 h-5 text-green-500" />;
+                                  default: return <Activity className="w-5 h-5" />;
+                              }
+                          };
+
+                          return (
+                              <div key={post.id} className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in">
+                                  <div className="flex items-start mb-4">
+                                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full mr-4">
+                                          {getIcon()}
+                                      </div>
+                                      <div>
+                                          <div className="flex items-baseline space-x-2">
+                                              <span className="font-bold text-slate-900 dark:text-white">{post.userPseudonym}</span>
+                                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                  {new Date(post.timestamp).toLocaleTimeString('nl-NL', {hour: '2-digit', minute:'2-digit'})}
+                                              </span>
+                                          </div>
+                                          <p className="text-slate-700 dark:text-slate-300 mt-1">{post.content}</p>
+                                      </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+                                      <button 
+                                          onClick={() => handleReaction(post.id, 'heart')}
+                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('heart') ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
+                                      >
+                                          <Heart className={`w-4 h-4 ${post.currentUserReacted?.includes('heart') ? 'fill-current' : ''}`} />
+                                          <span>{post.reactions.heart}</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => handleReaction(post.id, 'muscle')}
+                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('muscle') ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`}
+                                      >
+                                          <Hand className="w-4 h-4" /> 
+                                          <span>{post.reactions.muscle}</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => handleReaction(post.id, 'clap')}
+                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('clap') ? 'text-blue-500' : 'text-slate-500 hover:text-blue-500'}`}
+                                      >
+                                          <Share2 className="w-4 h-4" /> {/* Using Share/Clap metaphor */}
+                                          <span>{post.reactions.clap}</span>
+                                      </button>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+                  
+                  <div className="mt-8 text-center">
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                          * Om de veiligheid te waarborgen, zijn er geen openbare chatfuncties. Alle berichten worden automatisch gegenereerd op basis van behaalde doelen.
+                      </p>
+                  </div>
+              </div>
+          </div>
+      );
+  };
   
   const FoodAnalysisView = () => {
     const [scanMode, setScanMode] = useState<'meal' | 'product'>('meal');
@@ -1290,724 +1500,523 @@ export default function App() {
   };
 
   const HomeView = () => (
-    <div className="animate-fade-in bg-white dark:bg-slate-950">
-      {/* Improved Marketing Hero */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-slate-900">
-           <img 
-            src="https://images.unsplash.com/photo-1544367563-12123d8965cd?q=80&w=2070&auto=format&fit=crop" 
-            alt="Active lifestyle senior" 
+    <div className="animate-fade-in">
+      {/* Hero Section */}
+      <div className="relative bg-teal-700 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1552674605-46d52604746d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
+            alt="Active lifestyle" 
             className="w-full h-full object-cover opacity-20"
           />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-800/80 mix-blend-multiply" />
         </div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 md:pt-48 md:pb-32">
-          <div className="max-w-3xl">
-             <div className="inline-flex items-center px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-medium mb-6">
-               <Shield className="w-4 h-4 mr-2" />
-               Veilige & Privacy-vriendelijke omgeving
-             </div>
-             <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight tracking-tight">
-               Neem de regie over <br/>
-               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">uw gezondheid</span>
-             </h1>
-             <p className="text-xl md:text-2xl text-slate-300 mb-10 leading-relaxed max-w-2xl">
-               ProstaVita is het eerste platform dat mannen met prostaatkanker ondersteunt bij het verbeteren van hun leefstijl, met focus op gewicht, mentale kracht en kennis.
-             </p>
-             
-             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button size="lg" className="text-lg px-8 py-4 shadow-xl shadow-teal-900/20" onClick={() => navigateTo(currentUser ? 'dashboard' : 'register')}>
-                  Start Kosteloos
-                  <ArrowRight className="w-5 h-5 ml-2" />
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-6">
+            Fit, door dik en dun
+          </h1>
+          <p className="mt-6 text-xl text-teal-100 max-w-3xl">
+            Samen werken aan een gezonde leefstijl, speciaal ontwikkeld voor en door mannen met prostaatkanker.
+            Omdat een goede conditie het fundament is voor uw behandeling en herstel.
+          </p>
+          <div className="mt-10 flex space-x-4">
+            {!currentUser ? (
+              <>
+                <Button size="lg" variant="secondary" onClick={() => navigateTo('register')}>
+                  Start uw reis
                 </Button>
-                {/* Changed button to BLUE as requested */}
-                <Button 
-                  size="lg" 
-                  className="text-lg px-8 py-4 bg-blue-600 text-white hover:bg-blue-700 border-none shadow-md" 
-                  onClick={() => navigateTo('knowledge')}
-                >
-                  Bekijk KennisHub
+                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10" onClick={() => navigateTo('login')}>
+                  Inloggen
                 </Button>
-             </div>
-
-             {/* Social Proof */}
-             <div className="mt-12 flex items-center space-x-8 text-slate-400 text-sm font-medium">
-                <div className="flex items-center"><Users className="w-5 h-5 mr-2 text-teal-500" /> +14.000 diagnoses p/j</div>
-                <div className="flex items-center"><CheckCircle className="w-5 h-5 mr-2 text-teal-500" /> Expert Validatie</div>
-             </div>
+              </>
+            ) : (
+               <Button size="lg" variant="secondary" onClick={() => navigateTo('dashboard')}>
+                  Naar mijn Dashboard
+                </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Feature Section */}
-      <div className="py-24 bg-white dark:bg-slate-950">
+      {/* Features Grid */}
+      <div className="py-16 bg-white dark:bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">Waarom leefstijl cruciaal is</h2>
-             <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-               Onderzoek toont aan dat een gezond gewicht en actieve leefstijl de behandeling van prostaatkanker positief beïnvloeden en bijwerkingen verminderen.
-             </p>
+           <div className="text-center mb-12">
+             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Waarom meedoen?</h2>
            </div>
-           
-           <div className="grid md:grid-cols-3 gap-12">
-              {[
-                {
-                  icon: <Activity className="w-8 h-8 text-teal-600" />,
-                  title: "Sneller Herstel",
-                  desc: "Een betere conditie zorgt voor minder risico's bij operaties en een vlotter herstel na behandelingen."
-                },
-                {
-                  icon: <Scale className="w-8 h-8 text-amber-500" />,
-                  title: "Gezond Gewicht",
-                  desc: "Overgewicht kan behandelingen complexer maken. Wij helpen u op een verantwoorde manier uw doelen te bereiken."
-                },
-                {
-                  icon: <BookOpen className="w-8 h-8 text-blue-500" />,
-                  title: "Kennis is Kracht",
-                  desc: "Begrijp wat er in uw lichaam gebeurt. Onze KennisHub staat vol met medisch gevalideerde artikelen."
-                }
-              ].map((feature, idx) => (
-                <div key={idx} className="group p-8 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-teal-500/30 hover:shadow-xl hover:shadow-teal-900/5 transition-all duration-300">
-                   <div className="mb-6 bg-white dark:bg-slate-800 w-16 h-16 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                     {feature.icon}
-                   </div>
-                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{feature.title}</h3>
-                   <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.desc}</p>
-                </div>
-              ))}
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center text-teal-600 mb-4">
+                   <Activity className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Fysieke Kracht</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Verbeter uw conditie voor een operatie of tijdens behandeling. Een sterker lichaam herstelt sneller.
+                 </p>
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 mb-4">
+                   <Users className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Samen Sterk</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Deel ervaringen en successen (anoniem) met lotgenoten in Het Trefpunt. U staat er niet alleen voor.
+                 </p>
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-indigo-600 mb-4">
+                   <Brain className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Kennis & Inzicht</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Direct toegang tot betrouwbare medische informatie en leefstijladviezen van experts.
+                 </p>
+              </div>
            </div>
         </div>
       </div>
     </div>
   );
 
-  const KnowledgeHubView = () => {
-    const [activeTab, setActiveTab] = useState<'articles' | 'faq'>('articles');
-    const [selectedCategory, setSelectedCategory] = useState<string>('Alles');
-    const [faqSearch, setFaqSearch] = useState('');
-    const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const KnowledgeHubView = () => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">KennisHub</h2>
+        <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+          Betrouwbare informatie over voeding, beweging en herstel bij prostaatkanker.
+        </p>
+      </div>
 
-    const toggleFaq = (id: string) => {
-      setExpandedFaqId(expandedFaqId === id ? null : id);
-    };
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {ARTICLES.map(article => (
+          <ArticleCard key={article.id} article={article} onClick={handleArticleClick} />
+        ))}
+      </div>
 
-    // Filter Logic
-    const filteredArticles = selectedCategory === 'Alles' 
-      ? ARTICLES 
-      : ARTICLES.filter(a => a.category === selectedCategory);
-
-    const filteredFaqs = FAQ_ITEMS.filter(item => 
-      item.question.toLowerCase().includes(faqSearch.toLowerCase()) || 
-      item.answer.toLowerCase().includes(faqSearch.toLowerCase()) ||
-      item.category.toLowerCase().includes(faqSearch.toLowerCase())
-    );
-
-    return (
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">KennisHub</h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg max-w-3xl">
-              Verdiep uw kennis over leven met prostaatkanker. Vind betrouwbare artikelen en antwoorden op veelgestelde vragen.
-            </p>
-          </div>
-
-          <div className="flex border-b border-slate-200 dark:border-slate-800 mb-8">
-            <button
-              onClick={() => setActiveTab('articles')}
-              className={`pb-4 px-6 text-sm font-medium transition-colors border-b-2 flex items-center ${
-                activeTab === 'articles' 
-                  ? 'border-teal-600 text-teal-600 dark:text-teal-400 dark:border-teal-400' 
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Artikelen
-            </button>
-            <button
-              onClick={() => setActiveTab('faq')}
-              className={`pb-4 px-6 text-sm font-medium transition-colors border-b-2 flex items-center ${
-                activeTab === 'faq' 
-                  ? 'border-teal-600 text-teal-600 dark:text-teal-400 dark:border-teal-400' 
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-              }`}
-            >
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Veelgestelde Vragen
-            </button>
-          </div>
-
-          {activeTab === 'articles' && (
-            <div className="animate-fade-in">
-              <div className="flex flex-wrap gap-2 mb-8">
-                {['Alles', 'Voeding', 'Beweging', 'Mentaal', 'Medisch'].map(cat => (
-                  <button 
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedCategory === cat 
-                        ? 'bg-teal-600 text-white shadow-md' 
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredArticles.map((article) => (
-                  <ArticleCard 
-                    key={article.id} 
-                    article={article} 
-                    onClick={handleArticleClick}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'faq' && (
-            <div className="max-w-3xl animate-fade-in">
-              <div className="relative mb-8">
-                <input
-                  type="text"
-                  placeholder="Zoek in vragen & antwoorden..."
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 shadow-sm"
-                  value={faqSearch}
-                  onChange={(e) => setFaqSearch(e.target.value)}
-                />
-                <Search className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
-              </div>
-
-              <div className="space-y-4">
-                {filteredFaqs.length > 0 ? (
-                  filteredFaqs.map((item) => (
-                    <div 
-                      key={item.id} 
-                      className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleFaq(item.id)}
-                        className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors focus:outline-none"
-                      >
-                        <div>
-                          <span className="inline-block px-2 py-1 mb-2 text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 rounded-md">
-                            {item.category}
-                          </span>
-                          <h3 className="text-lg font-medium text-slate-900 dark:text-white pr-4">{item.question}</h3>
-                        </div>
-                        <div className={`transition-transform duration-200 text-slate-400 flex-shrink-0 ${expandedFaqId === item.id ? 'rotate-180' : ''}`}>
-                          <ChevronDown className="w-5 h-5" />
-                        </div>
-                      </button>
-                      
-                      {expandedFaqId === item.id && (
-                        <div className="px-6 pb-6 pt-2 border-t border-slate-50 dark:border-slate-700 animate-fade-in">
-                          <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                            {item.answer}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-slate-500 dark:text-slate-400">Geen vragen gevonden.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+      <div className="mt-16 bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-8">
+        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center">
+          <HelpCircle className="w-6 h-6 mr-2 text-teal-600" />
+          Veelgestelde Vragen
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           {FAQ_ITEMS.map(faq => (
+             <div key={faq.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
+               <span className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-2 block">{faq.category}</span>
+               <h4 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h4>
+               <p className="text-sm text-slate-600 dark:text-slate-400">{faq.answer}</p>
+             </div>
+           ))}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   const ArticleDetailView = () => {
     if (!selectedArticle) return null;
     return (
-      <div className="bg-white dark:bg-slate-900 min-h-screen py-12 animate-fade-in transition-colors duration-300">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button 
-            onClick={() => navigateTo('knowledge')}
-            className="flex items-center text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 mb-8 transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 rotate-180 mr-1" /> Terug naar overzicht
-          </button>
-          
-          <span className="inline-block px-3 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 text-xs font-bold rounded-full uppercase tracking-wider mb-4">
-            {selectedArticle.category}
-          </span>
-          
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-6 leading-tight">
-            {selectedArticle.title}
-          </h1>
-          
-          <div className="flex items-center space-x-6 text-slate-500 dark:text-slate-400 mb-8 text-sm border-b border-slate-100 dark:border-slate-800 pb-8">
-            <span className="flex items-center">
-              <UserIcon className="w-4 h-4 mr-2" />
-              {selectedArticle.author}
-            </span>
-            <span className="flex items-center">
-              <Activity className="w-4 h-4 mr-2" />
-              Leestijd: 5 min
-            </span>
-          </div>
-
-          <img 
-            src={selectedArticle.imageUrl} 
-            alt={selectedArticle.title}
-            className="w-full h-80 object-cover rounded-2xl mb-10 shadow-lg"
-          />
-          
-          <div className="prose prose-slate dark:prose-invert prose-lg max-w-none">
-            <p className="font-medium text-xl text-slate-800 dark:text-slate-200 mb-6">{selectedArticle.excerpt}</p>
-            <p className="text-slate-600 dark:text-slate-300 mb-4">
-              {selectedArticle.content}
-            </p>
-          </div>
+      <div className="bg-white dark:bg-slate-900 min-h-screen animate-fade-in">
+        <div className="relative h-96">
+           <img src={selectedArticle.imageUrl} alt={selectedArticle.title} className="w-full h-full object-cover" />
+           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
+           <div className="absolute bottom-0 left-0 right-0 p-8 max-w-7xl mx-auto">
+              <button 
+                onClick={() => navigateTo('knowledge')}
+                className="text-white/80 hover:text-white flex items-center mb-4 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 rotate-180 mr-1" /> Terug naar overzicht
+              </button>
+              <span className="px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full uppercase tracking-wider mb-4 inline-block">
+                {selectedArticle.category}
+              </span>
+              <h1 className="text-4xl font-bold text-white mb-2">{selectedArticle.title}</h1>
+              <div className="flex items-center text-white/80 space-x-6">
+                 <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(selectedArticle.date).toLocaleDateString('nl-NL')}</span>
+                 <span className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> {selectedArticle.author}</span>
+              </div>
+           </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-6 py-12">
+           <div className="prose prose-lg dark:prose-invert max-w-none">
+              <p className="lead text-xl text-slate-600 dark:text-slate-300 mb-8 font-medium">
+                {selectedArticle.excerpt}
+              </p>
+              <div className="text-slate-800 dark:text-slate-200">
+                {/* Simulated Content Rendering */}
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                <h3 className="text-2xl font-bold mt-8 mb-4">Waarom dit belangrijk is</h3>
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                <ul className="list-disc pl-5 space-y-2 my-6">
+                  <li>Verbeterde fysieke gesteldheid</li>
+                  <li>Sneller herstel na behandeling</li>
+                  <li>Minder bijwerkingen van medicatie</li>
+                  <li>Betere mentale veerkracht</li>
+                </ul>
+                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+              </div>
+           </div>
         </div>
       </div>
     );
   };
 
   const DashboardView = () => {
-    if (!currentUser) return null;
+     if (!currentUser) return null;
 
-    // determine last weight
-    const currentWeight = weightEntries.length > 0 
-      ? weightEntries.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].weight 
-      : currentUser.profile.startWeight;
+     const bmi = currentUser.profile.startWeight > 0 ? (currentUser.profile.startWeight / Math.pow(1.80, 2)).toFixed(1) : '-'; // Dummy height
+     const currentWeight = weightEntries.length > 0 
+        ? weightEntries[weightEntries.length - 1].weight 
+        : currentUser.profile.startWeight;
+     
+     const progress = currentUser.profile.startWeight - currentWeight;
+     
+     return (
+       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+         {/* Welcome Header */}
+         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+           <div>
+             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+               Dag {currentUser.profile.name}
+             </h1>
+             <p className="text-slate-600 dark:text-slate-400">
+               Laten we werken aan een sterker lichaam voor morgen.
+             </p>
+           </div>
+           
+           <div className="mt-4 md:mt-0 flex space-x-2">
+              <button 
+                onClick={handleOpenFreezeModal}
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  freeFreezeActive 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                    : medicalFreezeActive 
+                      ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {freeFreezeActive ? <PauseCircle className="w-4 h-4 mr-2" /> : 
+                 medicalFreezeActive ? <Stethoscope className="w-4 h-4 mr-2" /> :
+                 <Shield className="w-4 h-4 mr-2" />
+                }
+                {freeFreezeActive ? 'Rustdag Actief' : 
+                 medicalFreezeActive ? 'Medische Pauze' : 
+                 'Streak Beschermen'}
+              </button>
+           </div>
+         </div>
 
-    const difference = (currentWeight - currentUser.profile.startWeight).toFixed(1);
-    const isLoss = Number(difference) < 0;
-
-    // Calculate streak
-    const dates = new Set([
-      ...weightEntries.map(e => e.date),
-      ...checkInEntries.map(e => e.date)
-    ]);
-    const streak = dates.size > 0 ? dates.size : 0;
-
-    return (
-      <div className={`${getThemeWrapperClass()} min-h-screen py-8 animate-fade-in transition-all duration-700`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Mijn Dashboard</h1>
-              <p className="text-slate-500 dark:text-slate-400">Welkom terug, {currentUser.profile.name}.</p>
-              {activeChallenge && (
-                <div className="mt-2 inline-flex items-center text-xs font-semibold bg-white dark:bg-slate-800 px-3 py-1 rounded-full shadow-sm border border-slate-200 dark:border-slate-700">
-                  <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                  Huidige Focus: {activeChallenge.title}
-                </div>
-              )}
-            </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-3">
-               <div className={`px-4 py-2 rounded-lg border flex items-center text-sm font-medium transition-colors ${medicalFreezeActive ? 'bg-indigo-100 border-indigo-200 text-indigo-800 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-200' : (freeFreezeActive ? 'bg-blue-100 border-blue-200 text-blue-800 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-200' : 'bg-amber-100 border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200')}`}>
-                 {medicalFreezeActive ? (
-                   <>
-                     <Stethoscope className="w-4 h-4 mr-2" />
-                     Medische Pauze
-                   </>
-                 ) : freeFreezeActive ? (
-                    <>
-                      <PauseCircle className="w-4 h-4 mr-2" />
-                      Rustdag Actief
-                    </>
-                 ) : (
-                    <>
-                      <Flame className="w-4 h-4 mr-2" />
-                      {streak} Dagen Reeks
-                    </>
-                 )}
-               </div>
-               {/* Streak Freeze Button (Autonomy & Ethical implementation) */}
-               {!freeFreezeActive && !medicalFreezeActive && (
-                 <button 
-                    onClick={handleOpenFreezeModal}
-                    className="text-xs text-slate-500 hover:text-teal-600 underline"
-                 >
-                   Rustdag nemen
-                 </button>
-               )}
-            </div>
-          </div>
-
-          {/* Toast Notification */}
-          {notification && (
-            <div className="fixed top-24 right-4 z-50 bg-teal-600 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce-short">
-              {notification}
-            </div>
-          )}
-
-          {/* Gamification: Badges Section (Competence) */}
-          <div className="mb-8">
-             <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
-                <Award className="w-5 h-5 mr-2 text-teal-600" />
-                Mijlpalen & Badges
-             </h3>
-             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {BADGES.map((badge) => {
-                   // Simple simulated logic to determine unlocked state
-                   let isUnlocked = false;
-                   if (badge.conditionType === 'streak') isUnlocked = streak >= badge.threshold;
-                   if (badge.conditionType === 'weight_entry') isUnlocked = weightEntries.length >= badge.threshold;
-                   if (badge.conditionType === 'checkin') isUnlocked = checkInEntries.length >= badge.threshold;
-                   
-                   const Icon = IconMap[badge.iconName] || Award;
-                   
-                   return (
-                     <div key={badge.id} className={`p-4 rounded-xl border flex flex-col items-center text-center transition-all ${isUnlocked ? 'bg-white dark:bg-slate-900 border-teal-200 dark:border-teal-800 shadow-sm' : 'bg-white/50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 opacity-60 grayscale'}`}>
-                        <div className={`p-3 rounded-full mb-3 ${isUnlocked ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
-                           <Icon className="w-6 h-6" />
-                        </div>
-                        <h4 className="font-bold text-sm text-slate-900 dark:text-white mb-1">{badge.title}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{badge.description}</p>
-                     </div>
-                   );
-                })}
-             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase">Huidig Gewicht</span>
-                <div className="bg-teal-50 dark:bg-teal-900/30 p-2 rounded-lg text-teal-600 dark:text-teal-400">
-                  <Scale className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{currentWeight}</span>
-                <span className="ml-1 text-slate-500 font-medium">kg</span>
-              </div>
-              <div className={`mt-2 text-sm flex items-center ${isLoss ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
-                {isLoss ? <TrendingDown className="w-4 h-4 mr-1" /> : <PlusCircle className="w-4 h-4 mr-1" />}
-                <span>{Math.abs(Number(difference))} kg {isLoss ? 'afgevallen' : 'verschil'}</span>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-               <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase">Start Gewicht</span>
-                <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg text-slate-600 dark:text-slate-400">
-                  <Activity className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{currentUser.profile.startWeight}</span>
-                <span className="ml-1 text-slate-500 font-medium">kg</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-400">Start van uw traject</p>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-500 dark:text-slate-400 text-sm font-medium uppercase">Doel</span>
-                <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-lg text-amber-600 dark:text-amber-400">
-                  <Target className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="flex items-baseline">
-                <span className="text-3xl font-bold text-slate-900 dark:text-white">{currentUser.profile.goalWeight}</span>
-                <span className="ml-1 text-slate-500 font-medium">kg</span>
-              </div>
-              <p className="mt-2 text-sm text-slate-400">
-                 Nog {(currentWeight - currentUser.profile.goalWeight).toFixed(1)} kg te gaan
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column: Chart & History & Challenges */}
-            <div className="lg:col-span-2 space-y-8">
-              <WeightChart 
-                data={weightEntries} 
-                startWeight={currentUser.profile.startWeight}
-                goalWeight={currentUser.profile.goalWeight}
-              />
-
-              {/* Gamification: Challenges (Social & Autonomy) */}
-              <div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center">
-                    <Zap className="w-5 h-5 mr-2 text-amber-500" />
-                    Samen Gezond (Challenges)
-                </h3>
-                <div className="grid gap-4">
-                    {CHALLENGES.map(challenge => {
-                        const isActive = currentUser.profile.activeChallengeId === challenge.id;
-                        const isOtherActive = !!currentUser.profile.activeChallengeId && !isActive;
-
-                        return (
-                          <div key={challenge.id} className={`p-4 rounded-xl border flex flex-col sm:flex-row justify-between items-center group transition-all duration-300 ${isActive ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800 shadow-md transform scale-[1.02]' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-teal-500/30'}`}>
-                              <div className="mb-4 sm:mb-0">
-                                  <div className="flex items-center mb-1">
-                                      <span className="text-xs font-bold text-teal-600 bg-white dark:bg-teal-900/50 px-2 py-0.5 rounded mr-2 border border-teal-100 dark:border-teal-800">{challenge.category}</span>
-                                      <h4 className="font-bold text-slate-900 dark:text-white">{challenge.title}</h4>
-                                      {isActive && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">Actief</span>}
-                                  </div>
-                                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{challenge.description}</p>
-                                  <div className="flex items-center text-xs text-slate-400">
-                                      <Users className="w-3 h-3 mr-1" />
-                                      {challenge.participants} deelnemers • {challenge.duration}
-                                  </div>
-                              </div>
-                              <div className="flex space-x-2">
-                                {isActive ? (
-                                   <Button size="sm" variant="secondary" onClick={handleStopChallengeClick} className="bg-red-100 text-red-600 hover:bg-red-200 shadow-none">
-                                     Stoppen
-                                   </Button>
-                                ) : (
-                                  <Button 
-                                    size="sm" 
-                                    variant={isOtherActive ? "ghost" : "outline"} 
-                                    onClick={() => handleJoinChallenge(challenge)}
-                                    className={isOtherActive ? "text-slate-400" : ""}
-                                  >
-                                    {isOtherActive ? "Wissel" : "Doe mee"}
-                                  </Button>
-                                )}
-                              </div>
-                          </div>
-                        );
-                    })}
-                </div>
-              </div>
+         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           {/* Left Column: Input & Chart */}
+           <div className="lg:col-span-2 space-y-8">
               
-              <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-                <h4 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Metingen Geschiedenis</h4>
-                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {weightEntries.length === 0 && <p className="text-slate-500 text-sm">Nog geen metingen.</p>}
-                    {weightEntries
-                      .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .map((entry) => (
-                      <div key={entry.id} className="flex justify-between items-center text-sm group p-3 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors border-b border-slate-50 dark:border-slate-800 last:border-0">
-                        <span className="text-slate-500 dark:text-slate-400">{new Date(entry.date).toLocaleDateString('nl-NL')}</span>
-                        <div className="flex items-center">
-                          <span className="font-medium text-slate-900 dark:text-slate-200 mr-4">{entry.weight} kg</span>
-                          <button 
-                            onClick={() => handleDeleteWeight(entry.id)}
-                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Verwijder meting"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-              </div>
-            </div>
-
-            {/* Right Column: Combined Action Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-teal-100 dark:border-teal-900 overflow-hidden sticky top-24">
-                <div className="bg-teal-600 p-4 text-white">
-                  <h3 className="text-lg font-bold flex items-center">
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Dagelijkse Update
+              {/* Daily Input Card */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                    <Activity className="w-5 h-5 mr-2 text-teal-600" />
+                    Dagelijkse Check-in
                   </h3>
-                  <p className="text-teal-100 text-sm">Vul uw meting en reflectie samen in.</p>
+                  <span className="text-xs text-slate-400">{new Date().toLocaleDateString('nl-NL')}</span>
                 </div>
 
-                <div className="p-6">
-                  <form onSubmit={handleCombinedSubmit}>
-                    {/* Section 1: Weight */}
-                    <div className="mb-6">
-                      <label className="block text-sm font-bold text-slate-800 dark:text-white mb-2">
-                        1. Gewicht (optioneel)
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          step="0.1"
-                          className="block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border p-3 pl-4 focus:border-teal-500 focus:ring-teal-500"
-                          placeholder="Bijv. 85.5"
-                          value={combinedWeight}
-                          onChange={(e) => setCombinedWeight(e.target.value)}
-                        />
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                          <span className="text-slate-400 sm:text-sm">kg</span>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        * Wij geven een waarschuwing bij te snel gewichtsverlies.
-                      </p>
-                    </div>
-
-                    <div className="h-px bg-slate-200 dark:bg-slate-700 my-6"></div>
-
-                    {/* Section 2: Reflection */}
-                    <div className="mb-6">
-                      <label className="block text-sm font-bold text-slate-800 dark:text-white mb-4">
-                        2. Hoe voelt u zich vandaag?
-                      </label>
-                      <div className="space-y-6">
-                        {CHECKIN_QUESTIONS.map(q => (
-                          <div key={q.id}>
-                            <div className="flex justify-between mb-1">
-                              <label className="text-xs font-medium text-slate-600 dark:text-slate-400">{q.label}</label>
-                              <span className="text-xs font-bold text-teal-600 dark:text-teal-400">{checkInValues[q.id]}</span>
-                            </div>
-                            <input 
-                              type="range" 
-                              min="1" 
-                              max="10" 
-                              value={checkInValues[q.id]}
-                              onChange={(e) => setCheckInValues({...checkInValues, [q.id]: parseInt(e.target.value)})}
-                              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                            />
-                            <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                              <span>{q.minLabel}</span>
-                              <span>{q.maxLabel}</span>
-                            </div>
+                <form onSubmit={handleCombinedSubmit}>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      {CHECKIN_QUESTIONS.map(q => (
+                        <div key={q.id}>
+                          <div className="flex justify-between items-end mb-2">
+                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{q.label}</label>
+                             <span className="text-xs font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded">
+                               {checkInValues[q.id]}/10
+                             </span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                          <input 
+                             type="range" min="1" max="10" 
+                             value={checkInValues[q.id]}
+                             onChange={(e) => setCheckInValues({...checkInValues, [q.id]: parseInt(e.target.value)})}
+                             className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                          />
+                          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                             <span>{q.minLabel}</span>
+                             <span>{q.maxLabel}</span>
+                          </div>
+                        </div>
+                      ))}
+                   </div>
 
-                    <Button type="submit" className="w-full justify-center text-lg py-3 shadow-md hover:shadow-lg transition-all">
-                      Opslaan & Voltooien
-                    </Button>
-                  </form>
-                </div>
+                   <div className="border-t border-slate-100 dark:border-slate-700 pt-6">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                         Heeft u zich vandaag gewogen? (Optioneel)
+                      </label>
+                      <div className="flex space-x-4">
+                         <div className="relative flex-grow max-w-xs">
+                           <input 
+                             type="number" step="0.1"
+                             className="block w-full pl-10 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg focus:ring-teal-500 focus:border-teal-500"
+                             placeholder="0.0"
+                             value={combinedWeight}
+                             onChange={(e) => setCombinedWeight(e.target.value)}
+                           />
+                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                             <Scale className="h-5 w-5 text-slate-400" />
+                           </div>
+                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                             <span className="text-slate-500 sm:text-sm">kg</span>
+                           </div>
+                         </div>
+                         <Button type="submit">Opslaan</Button>
+                      </div>
+                   </div>
+                </form>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+
+              {/* Weight Chart */}
+              <WeightChart 
+                 data={weightEntries} 
+                 startWeight={currentUser.profile.startWeight}
+                 goalWeight={currentUser.profile.goalWeight}
+              />
+           </div>
+
+           {/* Right Column: Challenges & Badges */}
+           <div className="space-y-8">
+              
+              {/* Active Challenge Card */}
+              <div className={`rounded-xl shadow-sm border p-6 relative overflow-hidden ${
+                 activeChallenge ? 'bg-white dark:bg-slate-800 border-teal-200 dark:border-teal-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border-dashed'
+              }`}>
+                 <div className="flex justify-between items-start mb-4 relative z-10">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                       <Trophy className="w-5 h-5 mr-2 text-amber-500" />
+                       Huidige Challenge
+                    </h3>
+                    {activeChallenge && (
+                       <button onClick={handleStopChallengeClick} className="text-xs text-red-500 hover:text-red-700 underline">Stoppen</button>
+                    )}
+                 </div>
+
+                 {activeChallenge ? (
+                    <div className="relative z-10">
+                       <h4 className="text-xl font-bold text-teal-700 dark:text-teal-400 mb-2">{activeChallenge.title}</h4>
+                       <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{activeChallenge.description}</p>
+                       <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-1">
+                          <div className="bg-teal-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
+                       </div>
+                       <p className="text-xs text-slate-500 text-right">Dag 3 van {activeChallenge.duration.split(' ')[0]}</p>
+                    </div>
+                 ) : (
+                    <div className="text-center py-6 relative z-10">
+                       <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">U heeft nog geen actieve challenge.</p>
+                       <h4 className="font-bold text-slate-800 dark:text-white mb-4">Kies een uitdaging:</h4>
+                       <div className="space-y-3">
+                          {CHALLENGES.map(c => (
+                             <button 
+                               key={c.id}
+                               onClick={() => handleJoinChallenge(c)}
+                               className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 bg-white dark:bg-slate-900 transition-all group"
+                             >
+                                <div className="flex justify-between">
+                                   <span className="font-medium text-slate-900 dark:text-white group-hover:text-teal-600">{c.title}</span>
+                                   <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">{c.duration}</span>
+                                </div>
+                             </button>
+                          ))}
+                       </div>
+                    </div>
+                 )}
+                 {/* Decorative background blob */}
+                 <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-teal-50 dark:bg-teal-900/20 rounded-full blur-2xl z-0 pointer-events-none"></div>
+              </div>
+
+              {/* Badges */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
+                    <Award className="w-5 h-5 mr-2 text-indigo-500" />
+                    Behaalde Badges
+                 </h3>
+                 <div className="grid grid-cols-4 gap-4">
+                    {BADGES.map(badge => {
+                       const Icon = IconMap[badge.iconName] || Activity;
+                       const isEarned = Math.random() > 0.6; // Simulation
+                       return (
+                          <div key={badge.id} className={`flex flex-col items-center group relative ${isEarned ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-transform group-hover:scale-110 ${isEarned ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                <Icon className="w-6 h-6" />
+                             </div>
+                             <span className="text-[10px] text-center font-medium text-slate-600 dark:text-slate-400 leading-tight">{badge.title}</span>
+                          </div>
+                       );
+                    })}
+                 </div>
+              </div>
+           </div>
+         </div>
+       </div>
+     );
   };
 
   const SettingsView = () => {
     if (!currentUser) return null;
+    const { name, startWeight, goalWeight, carePathId } = currentUser.profile;
+    
+    // Local state for the form to avoid constant DB updates on every keystroke
+    const [localName, setLocalName] = useState(name);
+    const [localGoal, setLocalGoal] = useState(goalWeight);
+
     return (
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">Instellingen</h2>
-          
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 mb-6">
-            <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
-              <UserIcon className="w-5 h-5 mr-2 text-teal-600" />
-              Profiel
-            </h3>
-            <p className="text-sm text-slate-500 mb-4">Ingelogd als: {currentUser.email}</p>
-            <div className="space-y-4">
-               <div>
-                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gebruikersnaam (Pseudoniem)</label>
-                 <input 
-                    type="text" 
-                    value={currentUser.profile.name}
-                    onChange={(e) => handleUpdateProfile({ name: e.target.value })}
-                    className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white p-2.5 border"
-                 />
-               </div>
-               <div className="grid grid-cols-2 gap-4">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Instellingen</h2>
+        
+        <div className="space-y-6">
+           
+           {/* Profile Section */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Profiel</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
-                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Gewicht (kg)</label>
-                   <input 
-                      type="number" 
-                      value={currentUser.profile.startWeight}
-                      onChange={(e) => handleUpdateProfile({ startWeight: parseFloat(e.target.value) })}
-                      className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white p-2.5 border"
-                   />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gebruikersnaam</label>
+                    <input 
+                      type="text" 
+                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                      value={localName}
+                      onChange={(e) => setLocalName(e.target.value)}
+                      onBlur={() => handleUpdateProfile({ name: localName })}
+                    />
                  </div>
                  <div>
-                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Doel Gewicht (kg)</label>
-                   <input 
-                      type="number" 
-                      value={currentUser.profile.goalWeight}
-                      onChange={(e) => handleUpdateProfile({ goalWeight: parseFloat(e.target.value) })}
-                      className="w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white p-2.5 border"
-                   />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mailadres</label>
+                    <input type="email" disabled value={currentUser.email} className="w-full rounded-lg border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed" />
                  </div>
-               </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 mb-6">
-            <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
-              {currentUser.profile.themePreference === 'dark' ? <Moon className="w-5 h-5 mr-2 text-teal-600" /> : <Sun className="w-5 h-5 mr-2 text-teal-600" />}
-              Weergave
-            </h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-slate-900 dark:text-white">Dark Mode</p>
-                <p className="text-sm text-slate-500">Pas het uiterlijk aan voor minder vermoeide ogen.</p>
               </div>
-              <button 
-                onClick={toggleTheme}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${currentUser.profile.themePreference === 'dark' ? 'bg-teal-600' : 'bg-slate-200'}`}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentUser.profile.themePreference === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-          </div>
+           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
-             <h3 className="text-xl font-semibold text-red-600 mb-4 flex items-center">
-              <Trash2 className="w-5 h-5 mr-2" />
-              Gegevensbeheer
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
-              Als u uw volledige geschiedenis wilt wissen, kunt u dat hier doen. Dit kan niet ongedaan worden gemaakt.
-            </p>
-            <button 
-              onClick={handleDeleteAccount}
-              className="text-red-600 hover:text-red-700 font-medium text-sm border border-red-200 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors"
-            >
-              Verwijder mijn data
-            </button>
-          </div>
+           {/* Goals Section */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Doelen</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Gewicht (kg)</label>
+                    <input type="number" disabled value={startWeight} className="w-full rounded-lg border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed" />
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Doel Gewicht (kg)</label>
+                    <input 
+                      type="number" step="0.1"
+                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                      value={localGoal}
+                      onChange={(e) => setLocalGoal(parseFloat(e.target.value))}
+                      onBlur={() => handleUpdateProfile({ goalWeight: localGoal })}
+                    />
+                 </div>
+              </div>
+           </div>
+
+           {/* Care Path Section */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Behandelfase (Zorgpad)</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                Selecteer uw huidige situatie zodat wij de tips kunnen personaliseren.
+              </p>
+              <div className="grid grid-cols-1 gap-3">
+                 {CARE_PATHS.map(path => (
+                    <div 
+                      key={path.id}
+                      onClick={() => handleUpdateProfile({ carePathId: path.id as any })}
+                      className={`cursor-pointer border rounded-lg p-4 flex items-start transition-colors ${
+                        carePathId === path.id 
+                          ? 'bg-teal-50 border-teal-500 dark:bg-teal-900/20 dark:border-teal-500' 
+                          : 'border-slate-200 dark:border-slate-700 hover:border-teal-300'
+                      }`}
+                    >
+                      <div className={`p-2 rounded-full mr-3 ${carePathId === path.id ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500'}`}>
+                         <path.icon className="w-5 h-5" />
+                      </div>
+                      <div>
+                         <h4 className={`font-bold text-sm ${carePathId === path.id ? 'text-teal-800 dark:text-teal-300' : 'text-slate-800 dark:text-slate-200'}`}>{path.title}</h4>
+                         <p className="text-xs text-slate-500 dark:text-slate-400">{path.description}</p>
+                      </div>
+                      {carePathId === path.id && <CheckCircle className="w-5 h-5 text-teal-600 ml-auto" />}
+                    </div>
+                 ))}
+              </div>
+           </div>
+
+           {/* Appearance */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Uiterlijk</h3>
+              <div className="flex items-center justify-between">
+                 <span className="text-slate-700 dark:text-slate-300">Donkere modus</span>
+                 <button 
+                   onClick={toggleTheme}
+                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${currentUser.profile.themePreference === 'dark' ? 'bg-teal-600' : 'bg-slate-300'}`}
+                 >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentUser.profile.themePreference === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
+                 </button>
+              </div>
+           </div>
+
+           {/* Danger Zone */}
+           <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 p-6">
+              <h3 className="text-lg font-bold text-red-800 dark:text-red-400 mb-2">Gevarenzone</h3>
+              <p className="text-sm text-red-600 dark:text-red-300 mb-4">
+                 Het verwijderen van uw account is permanent en kan niet ongedaan worden gemaakt.
+              </p>
+              <Button variant="secondary" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteAccount}>
+                 Account Verwijderen
+              </Button>
+           </div>
         </div>
       </div>
     );
   };
 
   const Footer = () => (
-    <footer className="bg-slate-900 text-slate-300 py-12 mt-auto">
+    <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="flex items-center mb-4">
-              <Heart className="h-6 w-6 text-teal-500 fill-teal-500" />
-              <span className="ml-2 text-lg font-bold text-white">ProstaVita</span>
+         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-1 md:col-span-2">
+               <div className="flex items-center mb-4">
+                  <Heart className="h-6 w-6 text-teal-600" />
+                  <span className="ml-2 text-lg font-bold text-slate-900 dark:text-white">Fit, door dik en dun</span>
+               </div>
+               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
+                  Een initiatief om mannen met prostaatkanker te ondersteunen bij het bereiken van een gezonde leefstijl voor een beter herstel.
+               </p>
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Ondersteuning voor mannen met prostaatkanker. Wij geloven in de kracht van leefstijl, kennis en positiviteit tijdens uw herstelproces.
+            <div>
+               <h4 className="font-bold text-slate-900 dark:text-white mb-4">Snel naar</h4>
+               <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <li><button onClick={() => navigateTo('home')} className="hover:text-teal-600">Home</button></li>
+                  <li><button onClick={() => navigateTo('knowledge')} className="hover:text-teal-600">KennisHub</button></li>
+                  <li><button onClick={() => navigateTo('community')} className="hover:text-teal-600">Het Trefpunt</button></li>
+               </ul>
+            </div>
+            <div>
+               <h4 className="font-bold text-slate-900 dark:text-white mb-4">Ondersteuning</h4>
+               <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <li><a href="#" className="hover:text-teal-600">Veelgestelde Vragen</a></li>
+                  <li><a href="#" className="hover:text-teal-600">Privacybeleid</a></li>
+                  <li><a href="#" className="hover:text-teal-600">Contact</a></li>
+               </ul>
+            </div>
+         </div>
+         <div className="border-t border-slate-100 dark:border-slate-800 mt-12 pt-8 flex justify-between items-center flex-col md:flex-row">
+            <p className="text-xs text-slate-400">© 2024 Fit, door dik en dun. Alle rechten voorbehouden.</p>
+            <p className="text-xs text-slate-400 mt-2 md:mt-0">
+              Disclaimer: Deze app vervangt geen medisch advies.
             </p>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4">Snelle Links</h4>
-            <ul className="space-y-2 text-sm">
-              <li><button onClick={() => navigateTo('knowledge')} className="hover:text-teal-400 transition-colors">Artikelen</button></li>
-              <li><button onClick={() => navigateTo(currentUser ? 'dashboard' : 'login')} className="hover:text-teal-400 transition-colors">Gewichtstracker</button></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4">Disclaimer</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Deze website biedt geen medisch advies. Raadpleeg altijd uw behandelend arts voor medische vragen. Dit platform is bedoeld als ondersteuning van uw leefstijl.
-            </p>
-          </div>
-        </div>
-        <div className="border-t border-slate-800 mt-8 pt-8 text-center text-xs text-slate-500">
-          &copy; {new Date().getFullYear()} ProstaVita. Alle rechten voorbehouden.
-        </div>
+         </div>
       </div>
     </footer>
   );
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
+      {/* ... (Animations, Modals) ... */}
+      
       {/* Success Overlay Animation */}
       {activeAnimation && (
         <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-slate-950/95 flex items-center justify-center animate-fade-in">
            {activeAnimation === 'Voeding' && <BroccoliAnimation />}
-           {activeAnimation === 'Beweging' && <SneakerAnimation />}
+           {activeAnimation === 'Beweging' && <RunnerAnimation />}
            {activeAnimation === 'Mentaal' && <ZenAnimation />}
         </div>
       )}
@@ -2158,6 +2167,7 @@ export default function App() {
         {currentView === 'dashboard' && <DashboardView />}
         {currentView === 'settings' && <SettingsView />}
         {currentView === 'food-analysis' && <FoodAnalysisView />}
+        {currentView === 'community' && <CommunityView />}
       </main>
 
       {/* Floating Chat Widget */}
