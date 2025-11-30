@@ -1,5 +1,5 @@
 
-import { User, WeightEntry, DailyCheckIn, UserProfile } from '../types';
+import { User, WeightEntry, DailyCheckIn, UserProfile, MealEntry } from '../types';
 
 // Simulate a secure hashing function (in a real app, this would be server-side bcrypt/argon2)
 const hashPassword = async (password: string): Promise<string> => {
@@ -14,6 +14,7 @@ const DB_KEYS = {
   USERS: 'prostavita_db_users',
   DATA_WEIGHTS: 'prostavita_db_weights',
   DATA_CHECKINS: 'prostavita_db_checkins',
+  DATA_MEALS: 'prostavita_db_meals',
   SESSION: 'prostavita_db_session',
   RESET_TOKENS: 'prostavita_db_reset_tokens'
 };
@@ -116,6 +117,10 @@ class DatabaseService {
     const allCheckins = this.getAllCheckins();
     delete allCheckins[userId];
     localStorage.setItem(DB_KEYS.DATA_CHECKINS, JSON.stringify(allCheckins));
+
+    const allMeals = this.getAllMeals();
+    delete allMeals[userId];
+    localStorage.setItem(DB_KEYS.DATA_MEALS, JSON.stringify(allMeals));
 
     // Clear session if it was this user
     const session = this.getCurrentSession();
@@ -237,6 +242,38 @@ class DatabaseService {
     return newEntry;
   }
 
+  // --- Data Management (Meals) ---
+
+  getMealEntries(userId: string): MealEntry[] {
+    const allMeals = this.getAllMeals();
+    return allMeals[userId] || [];
+  }
+
+  addMealEntry(userId: string, meal: Omit<MealEntry, 'id' | 'date'>): MealEntry {
+    const allMeals = this.getAllMeals();
+    const userMeals = allMeals[userId] || [];
+
+    const newEntry: MealEntry = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString().split('T')[0],
+      ...meal
+    };
+
+    userMeals.push(newEntry);
+    allMeals[userId] = userMeals;
+    
+    localStorage.setItem(DB_KEYS.DATA_MEALS, JSON.stringify(allMeals));
+    return newEntry;
+  }
+
+  deleteMealEntry(userId: string, entryId: string): void {
+    const allMeals = this.getAllMeals();
+    if (!allMeals[userId]) return;
+
+    allMeals[userId] = allMeals[userId].filter(m => m.id !== entryId);
+    localStorage.setItem(DB_KEYS.DATA_MEALS, JSON.stringify(allMeals));
+  }
+
   // --- Internal Helpers (Private-ish) ---
 
   private getUsers(): User[] {
@@ -259,6 +296,11 @@ class DatabaseService {
 
   private getAllCheckins(): Record<string, DailyCheckIn[]> {
     const str = localStorage.getItem(DB_KEYS.DATA_CHECKINS);
+    return str ? JSON.parse(str) : {};
+  }
+
+  private getAllMeals(): Record<string, MealEntry[]> {
+    const str = localStorage.getItem(DB_KEYS.DATA_MEALS);
     return str ? JSON.parse(str) : {};
   }
 

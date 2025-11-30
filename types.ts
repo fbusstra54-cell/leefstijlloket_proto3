@@ -35,6 +35,14 @@ export interface DailyCheckIn {
   sleep: number; // 1-10
 }
 
+export interface MealEntry {
+  id: string;
+  date: string; // ISO date string YYYY-MM-DD
+  name: string;
+  description?: string;
+  calories: number;
+}
+
 export type CarePathId = 'active_surveillance' | 'treatment_lt_6m' | 'treatment_6_12w' | 'high_risk';
 
 export interface UserProfile {

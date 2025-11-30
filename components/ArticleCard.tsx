@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Article } from '../types';
-import { ArrowRight, Calendar, User } from 'lucide-react';
+import { ArrowRight, Calendar, User, Share2 } from 'lucide-react';
 
 interface ArticleCardProps {
   article: Article;
@@ -8,9 +9,31 @@ interface ArticleCardProps {
 }
 
 export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Voorkom dat de kaart zelf wordt aangeklikt
+    
+    const shareData = {
+      title: article.title,
+      text: article.excerpt,
+      url: window.location.href // In een echte app zou dit een specifieke deep link zijn
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${article.title}\n${window.location.href}`);
+        // Omdat we geen toast notification context hebben in dit component, gebruiken we een simpele alert als fallback
+        alert('Link gekopieerd naar klembord!');
+      }
+    } catch (err) {
+      console.error('Error sharing:', err);
+    }
+  };
+
   return (
     <div 
-      className="group bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-slate-100 dark:border-slate-700 flex flex-col h-full cursor-pointer"
+      className="group bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-slate-100 dark:border-slate-700 flex flex-col h-full cursor-pointer relative"
       onClick={() => onClick(article)}
     >
       <div className="relative h-48 overflow-hidden">
@@ -24,6 +47,13 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article, onClick }) =>
             {article.category}
           </span>
         </div>
+        <button
+          onClick={handleShare}
+          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full text-slate-600 hover:text-teal-600 shadow-sm transition-colors z-10 hover:bg-white"
+          title="Artikel delen"
+        >
+          <Share2 className="w-4 h-4" />
+        </button>
       </div>
       
       <div className="p-6 flex flex-col flex-grow">

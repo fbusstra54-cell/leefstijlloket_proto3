@@ -58,12 +58,13 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
 import { ArticleCard } from './components/ArticleCard';
 import { WeightChart } from './components/WeightChart';
-import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge, CommunityPost, ReactionType } from './types';
+import { MealLogbook } from './components/MealLogbook';
+import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge, CommunityPost, ReactionType, MealEntry } from './types';
 import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES, CARE_PATHS, MOCK_COMMUNITY_POSTS } from './constants';
 import { db } from './services/DatabaseService';
 
 // ---- Views Enum ----
-type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis' | 'forgot-password' | 'reset-password' | 'community';
+type View = 'home' | 'login' | 'register' | 'knowledge' | 'dashboard' | 'article-detail' | 'settings' | 'food-analysis' | 'forgot-password' | 'reset-password' | 'community' | 'meal-logbook';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -236,8 +237,8 @@ const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin:
   const [password, setPassword] = useState('');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors duration-300">
         <div className="text-center">
           <Heart className="mx-auto h-12 w-12 text-teal-600" />
           <h2 className="mt-6 text-3xl font-extrabold text-slate-900 dark:text-white">Welkom terug</h2>
@@ -252,7 +253,7 @@ const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin:
               <input
                 type="email"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
                 placeholder="naam@voorbeeld.nl"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -272,7 +273,7 @@ const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin:
               <input
                 type="password"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -295,8 +296,8 @@ const ForgotPasswordView = ({ onBack, onSubmit }: { onBack: () => void, onSubmit
   const [email, setEmail] = useState('');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors duration-300">
         <button onClick={onBack} className="flex items-center text-sm text-slate-500 hover:text-teal-600 mb-4">
           <ArrowLeft className="w-4 h-4 mr-1" /> Terug naar inloggen
         </button>
@@ -315,7 +316,7 @@ const ForgotPasswordView = ({ onBack, onSubmit }: { onBack: () => void, onSubmit
             <input
               type="email"
               required
-              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
               placeholder="naam@voorbeeld.nl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -347,8 +348,8 @@ const ResetPasswordView = ({ onReset }: { onReset: (p: string) => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors duration-300">
         <div className="text-center">
           <div className="mx-auto w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-full flex items-center justify-center mb-4">
             <CheckCircle className="h-6 w-6 text-teal-600 dark:text-teal-400" />
@@ -371,7 +372,7 @@ const ResetPasswordView = ({ onReset }: { onReset: (p: string) => void }) => {
               <input
                 type="password"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -381,7 +382,7 @@ const ResetPasswordView = ({ onReset }: { onReset: (p: string) => void }) => {
               <input
                 type="password"
                 required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white dark:bg-slate-800 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
@@ -411,8 +412,8 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors duration-300">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Maak een account</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -425,7 +426,7 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
             <input
               type="text"
               required
-              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500"
+              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
             />
@@ -435,7 +436,7 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
             <input
               type="email"
               required
-              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500"
+              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
             />
@@ -445,7 +446,7 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
             <input
               type="password"
               required
-              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500"
+              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
             />
@@ -455,7 +456,7 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Gewicht</label>
                 <input
                   type="number" step="0.1" min="0.1" required
-                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500"
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                   value={formData.startWeight}
                   onChange={(e) => setFormData({...formData, startWeight: e.target.value})}
                 />
@@ -464,7 +465,7 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Doel Gewicht</label>
                 <input
                   type="number" step="0.1" min="0.1" required
-                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500"
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                   value={formData.goalWeight}
                   onChange={(e) => setFormData({...formData, goalWeight: e.target.value})}
                 />
@@ -474,6 +475,286 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
         </form>
         <div className="text-center mt-4">
            <button onClick={onNavigateLogin} className="text-sm text-teal-600 hover:text-teal-500 font-medium">Ik heb al een account</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface DashboardViewProps {
+  currentUser: User;
+  weightEntries: WeightEntry[];
+  checkInEntries: DailyCheckIn[];
+  combinedWeight: string;
+  setCombinedWeight: (val: string) => void;
+  checkInValues: Record<string, number>;
+  setCheckInValues: (val: Record<string, number>) => void;
+  handleCombinedSubmit: (e: React.FormEvent) => void;
+  handleOpenFreezeModal: () => void;
+  freeFreezeActive: boolean;
+  medicalFreezeActive: boolean;
+  activeChallenge: Challenge | null;
+  handleStopChallengeClick: () => void;
+  handleJoinChallenge: (c: Challenge) => void;
+  isDark: boolean;
+}
+
+const DashboardView = ({
+  currentUser,
+  weightEntries,
+  checkInEntries,
+  combinedWeight,
+  setCombinedWeight,
+  checkInValues,
+  setCheckInValues,
+  handleCombinedSubmit,
+  handleOpenFreezeModal,
+  freeFreezeActive,
+  medicalFreezeActive,
+  activeChallenge,
+  handleStopChallengeClick,
+  handleJoinChallenge,
+  isDark
+}: DashboardViewProps) => {
+  const currentWeight = weightEntries.length > 0 
+    ? weightEntries[weightEntries.length - 1].weight 
+    : currentUser.profile.startWeight;
+  
+  const calculateProgress = () => {
+    const start = currentUser.profile.startWeight;
+    const goal = currentUser.profile.goalWeight;
+    
+    if (start === goal) return 100;
+    
+    const percentage = ((currentWeight - start) / (goal - start)) * 100;
+    return Math.max(0, Math.min(100, percentage));
+  };
+  
+  const progressPercentage = calculateProgress();
+  
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+      {/* Welcome Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Dag {currentUser.profile.name}
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Laten we werken aan een sterker lichaam voor morgen.
+          </p>
+        </div>
+        
+        <div className="mt-4 md:mt-0 flex space-x-2">
+           <button 
+             onClick={handleOpenFreezeModal}
+             className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+               freeFreezeActive 
+                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                 : medicalFreezeActive 
+                   ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
+                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+             }`}
+           >
+             {freeFreezeActive ? <PauseCircle className="w-4 h-4 mr-2" /> : 
+              medicalFreezeActive ? <Stethoscope className="w-4 h-4 mr-2" /> :
+              <Shield className="w-4 h-4 mr-2" />
+             }
+             {freeFreezeActive ? 'Rustdag Actief' : 
+              medicalFreezeActive ? 'Medische Pauze' : 
+              'Streak Beschermen'}
+           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Input & Chart */}
+        <div className="lg:col-span-2 space-y-8">
+           
+           {/* Daily Input Card */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+             <div className="flex items-center justify-between mb-6">
+               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                 <Activity className="w-5 h-5 mr-2 text-teal-600" />
+                 Dagelijkse Check-in
+               </h3>
+               <span className="text-xs text-slate-400">{new Date().toLocaleDateString('nl-NL')}</span>
+             </div>
+
+             <form onSubmit={handleCombinedSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                   {CHECKIN_QUESTIONS.map(q => (
+                     <div key={q.id}>
+                       <div className="flex justify-between items-end mb-2">
+                          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{q.label}</label>
+                          <span className="text-xs font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded">
+                            {checkInValues[q.id]}/10
+                          </span>
+                       </div>
+                       <input 
+                          type="range" min="1" max="10" 
+                          value={checkInValues[q.id]}
+                          onChange={(e) => setCheckInValues({...checkInValues, [q.id]: parseInt(e.target.value)})}
+                          className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                       />
+                       <div className="flex justify-between text-[10px] text-slate-400 mt-1">
+                          <span>{q.minLabel}</span>
+                          <span>{q.maxLabel}</span>
+                       </div>
+                     </div>
+                   ))}
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-700 pt-6">
+                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Heeft u zich vandaag gewogen? (Optioneel)
+                   </label>
+                   <div className="flex space-x-4">
+                      <div className="relative flex-grow max-w-xs">
+                        <input 
+                          type="number" step="0.1"
+                          className="block w-full pl-10 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-950 dark:text-white rounded-lg focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
+                          placeholder="0.0"
+                          value={combinedWeight}
+                          onChange={(e) => setCombinedWeight(e.target.value)}
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Scale className="h-5 w-5 text-slate-400" />
+                        </div>
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <span className="text-slate-500 sm:text-sm">kg</span>
+                        </div>
+                      </div>
+                      <Button type="submit">Opslaan</Button>
+                   </div>
+                </div>
+             </form>
+           </div>
+
+           {/* Progress Indicator */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
+                <Target className="w-5 h-5 mr-2 text-teal-600" />
+                Doelprogressie
+              </h3>
+              
+              <div className="relative pt-1">
+                <div className="flex mb-2 items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                  <span>Start: {currentUser.profile.startWeight} kg</span>
+                  <span className="text-teal-600 dark:text-teal-400">
+                    {progressPercentage.toFixed(0)}% Voltooid
+                  </span>
+                  <span>Doel: {currentUser.profile.goalWeight} kg</span>
+                </div>
+                <div className="overflow-hidden h-4 mb-2 text-xs flex rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div 
+                    style={{ width: `${progressPercentage}%` }} 
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-teal-500 transition-all duration-1000 ease-out"
+                  ></div>
+                </div>
+                <div className="text-center text-sm font-medium text-slate-800 dark:text-slate-200 mt-2">
+                   Huidig gewicht: <span className="font-bold text-teal-600 dark:text-teal-400 text-lg">{currentWeight} kg</span>
+                   <span className="text-xs text-slate-500 dark:text-slate-500 block">
+                     Nog {Math.abs(currentUser.profile.goalWeight - currentWeight).toFixed(1)} kg te gaan
+                   </span>
+                </div>
+              </div>
+           </div>
+
+           {/* Weight Chart */}
+           <WeightChart 
+              data={weightEntries} 
+              startWeight={currentUser.profile.startWeight}
+              goalWeight={currentUser.profile.goalWeight}
+              isDark={isDark}
+           />
+        </div>
+
+        {/* Right Column: Challenges & Badges */}
+        <div className="space-y-8">
+           
+           {/* Active Challenge Card */}
+           <div className={`rounded-xl shadow-sm border p-6 relative overflow-hidden transition-colors duration-300 ${
+              activeChallenge ? 'bg-white dark:bg-slate-800 border-teal-200 dark:border-teal-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border-dashed'
+           }`}>
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                    <Trophy className="w-5 h-5 mr-2 text-amber-500" />
+                    Huidige Challenge
+                 </h3>
+                 {activeChallenge && (
+                    <button onClick={handleStopChallengeClick} className="text-xs text-red-500 hover:text-red-700 underline">Stoppen</button>
+                 )}
+              </div>
+
+              {activeChallenge ? (
+                 <div className="relative z-10">
+                    <h4 className="text-xl font-bold text-teal-700 dark:text-teal-400 mb-2">{activeChallenge.title}</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{activeChallenge.description}</p>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-1">
+                       <div className="bg-teal-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
+                    </div>
+                    <p className="text-xs text-slate-500 text-right">Dag 3 van {activeChallenge.duration.split(' ')[0]}</p>
+                 </div>
+              ) : (
+                 <div className="text-center py-6 relative z-10">
+                    <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">U heeft nog geen actieve challenge.</p>
+                    <h4 className="font-bold text-slate-800 dark:text-white mb-4">Kies een uitdaging:</h4>
+                    <div className="space-y-3">
+                       {CHALLENGES.map(c => (
+                          <button 
+                            key={c.id}
+                            onClick={() => handleJoinChallenge(c)}
+                            className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 bg-white dark:bg-slate-900 transition-all group"
+                          >
+                             <div className="flex justify-between">
+                                <span className="font-medium text-slate-900 dark:text-white group-hover:text-teal-600">{c.title}</span>
+                                <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">{c.duration}</span>
+                             </div>
+                          </button>
+                       ))}
+                    </div>
+                 </div>
+              )}
+              {/* Decorative background blob */}
+              <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-teal-50 dark:bg-teal-900/20 rounded-full blur-2xl z-0 pointer-events-none"></div>
+           </div>
+
+           {/* Badges */}
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
+                 <Award className="w-5 h-5 mr-2 text-indigo-500" />
+                 Behaalde Badges
+              </h3>
+              <div className="grid grid-cols-4 gap-4">
+                 {BADGES.map(badge => {
+                    const Icon = IconMap[badge.iconName] || Activity;
+                    
+                    // Deterministic Badge Logic to prevent flickering
+                    const isEarned = (() => {
+                        if (badge.conditionType === 'weight_entry') return weightEntries.length >= badge.threshold;
+                        if (badge.conditionType === 'checkin') return checkInEntries.length >= badge.threshold;
+                        if (badge.conditionType === 'streak') return checkInEntries.length >= badge.threshold; // Simplified streak check for stability
+                        return false;
+                    })();
+
+                    return (
+                       <div key={badge.id} className={`flex flex-col items-center group relative cursor-help ${isEarned ? 'opacity-100' : 'opacity-40 grayscale'}`}>
+                          {/* Custom Tooltip */}
+                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-slate-900 text-white text-xs p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20 text-center shadow-lg">
+                            {badge.description}
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                          </div>
+
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-transform group-hover:scale-110 ${isEarned ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                             <Icon className="w-6 h-6" />
+                          </div>
+                          <span className="text-[10px] text-center font-medium text-slate-600 dark:text-slate-400 leading-tight">{badge.title}</span>
+                       </div>
+                    );
+                 })}
+              </div>
+           </div>
         </div>
       </div>
     </div>
@@ -497,6 +778,7 @@ export default function App() {
   // App Data State (Linked to User ID)
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
   const [checkInEntries, setCheckInEntries] = useState<DailyCheckIn[]>([]);
+  const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   
   // Notification State
   const [notification, setNotification] = useState<string | null>(null);
@@ -588,14 +870,17 @@ export default function App() {
       // Load specific user data from DB Service
       const weights = db.getWeightEntries(currentUser.id);
       const checkins = db.getCheckIns(currentUser.id);
+      const meals = db.getMealEntries(currentUser.id);
       
       setWeightEntries(weights);
       setCheckInEntries(checkins);
+      setMealEntries(meals);
     } else {
       // Default theme for guests/logged out
       document.documentElement.classList.remove('dark');
       setWeightEntries([]);
       setCheckInEntries([]);
+      setMealEntries([]);
     }
   }, [currentUser]);
 
@@ -651,6 +936,7 @@ export default function App() {
 
   const medicalFreezeActive = isMedicalFreezeActive();
   const freeFreezeActive = !isFreeFreezeEligible && !medicalFreezeActive && new Date(currentUser?.profile.lastFreeFreezeDate || '').getDate() === new Date().getDate();
+  const isDark = currentUser?.profile.themePreference === 'dark';
 
   // ---- Handlers ----
 
@@ -672,13 +958,20 @@ export default function App() {
 
   const handleRegister = async (email: string, password: string, name: string, startWeight: number, goalWeight: number) => {
     // Validatie
-    if (startWeight <= 0 || goalWeight <= 0) {
-      alert('Gewicht moet een positief getal zijn.');
-      return;
-    }
     if (isNaN(startWeight) || isNaN(goalWeight)) {
       alert('Voer geldige getallen in voor het gewicht.');
       return;
+    }
+
+    if (startWeight < 20 || startWeight > 400) {
+      alert('De waarde moet tussen de 20 en de 400 kilo zitten');
+      return;
+    }
+
+    if (startWeight > 150) {
+      if (!window.confirm(`Klopt het dat u ${startWeight} kilo bent?`)) {
+         return;
+      }
     }
 
     try {
@@ -690,6 +983,9 @@ export default function App() {
         activeChallengeId: null
       });
       
+      // Auto-add start weight to chart
+      db.addWeightEntry(newUser.id, startWeight);
+
       setCurrentUser(newUser);
       navigateTo('dashboard');
       showNotification('Account succesvol aangemaakt! U bent nu ingelogd.');
@@ -788,11 +1084,42 @@ export default function App() {
         const lastEntry = sortedEntries[0];
 
         if (lastEntry) {
-            const diff = lastEntry.weight - newWeight;
-            // If lost more than 2.5kg since last entry (assuming roughly weekly/daily), show warning
-            if (diff > 2.5) {
-                if(!window.confirm("Let op: U heeft een aanzienlijk gewichtsverlies ingevoerd. Snel gewichtsverlies kan ongezond zijn. Weet u zeker dat dit klopt? Wij raden aan bij twijfel uw arts te raadplegen.")) {
-                    return;
+            const lastDate = new Date(lastEntry.date);
+            const today = new Date();
+            const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // Check if entry is within a week (approx 7 days)
+            if (diffDays <= 7) {
+                const weightDifference = newWeight - lastEntry.weight; // Positive = gained, Negative = lost
+                const startWeight = currentUser.profile.startWeight;
+                const goalWeight = currentUser.profile.goalWeight;
+                const currentWeight = lastEntry.weight;
+
+                // Scenario 1: Doel is aankomen (Ondergewicht / Doel > Huidig)
+                // Waarschuwing als: Meer dan 4kg AFGEVALLEN in een week
+                if (goalWeight > currentWeight) {
+                    if (weightDifference < -4) {
+                        const confirmed = window.confirm(`Klopt het dat u ${Math.abs(weightDifference).toFixed(1)} kg bent afgevallen in de afgelopen week?`);
+                        if (confirmed) {
+                            alert("Neem advies op met de leefstijlcoach via dit emailadres: x@gmail.com.");
+                        } else {
+                            return; // Cancel save if user says "No"
+                        }
+                    }
+                }
+
+                // Scenario 2: Doel is afvallen (Overgewicht / Doel < Huidig)
+                // Waarschuwing als: Meer dan 4kg AANGEKOMEN in een week
+                if (goalWeight < currentWeight) {
+                    if (weightDifference > 4) {
+                        const confirmed = window.confirm(`Klopt het dat u ${weightDifference.toFixed(1)} kg bent aangekomen in de afgelopen week?`);
+                        if (confirmed) {
+                            alert("Neem advies op met de leefstijlcoach via dit emailadres: x@gmail.com.");
+                        } else {
+                            return; // Cancel save if user says "No"
+                        }
+                    }
                 }
             }
         }
@@ -837,6 +1164,24 @@ export default function App() {
       db.deleteWeightEntry(currentUser.id, id);
       setWeightEntries(prev => prev.filter(e => e.id !== id));
       showNotification(`Meting verwijderd, ${currentUser.profile.name}.`);
+    }
+  };
+
+  // --- Meal Logbook Handlers ---
+
+  const handleAddMeal = (meal: { name: string; description: string; calories: number }) => {
+    if (!currentUser) return;
+    const newMeal = db.addMealEntry(currentUser.id, meal);
+    setMealEntries(prev => [...prev, newMeal]);
+    showNotification('Maaltijd toegevoegd aan uw logboek.');
+  };
+
+  const handleDeleteMeal = (id: string) => {
+    if (!currentUser) return;
+    if (window.confirm('Wilt u deze maaltijd verwijderen?')) {
+      db.deleteMealEntry(currentUser.id, id);
+      setMealEntries(prev => prev.filter(m => m.id !== id));
+      showNotification('Maaltijd verwijderd.');
     }
   };
 
@@ -1013,7 +1358,7 @@ export default function App() {
 
   // ---- Components ----
 
-  if (isLoading) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div></div>;
+  if (isLoading) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-300"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-teal-600"></div></div>;
 
   const Navbar = () => (
     <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
@@ -1032,27 +1377,34 @@ export default function App() {
             >
               Home
             </button>
-            <button 
-              onClick={() => navigateTo('knowledge')}
-              className={`text-sm font-medium ${currentView === 'knowledge' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-            >
-              KennisHub
-            </button>
-             <button 
-              onClick={() => navigateTo('food-analysis')}
-              className={`text-sm font-medium flex items-center ${currentView === 'food-analysis' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-            >
-              <Camera className="w-4 h-4 mr-1.5" />
-              Voedingsscan
-            </button>
 
             {currentUser ? (
               <>
+                <button 
+                  onClick={() => navigateTo('knowledge')}
+                  className={`text-sm font-medium ${currentView === 'knowledge' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
+                >
+                  KennisHub
+                </button>
+                 <button 
+                  onClick={() => navigateTo('food-analysis')}
+                  className={`text-sm font-medium flex items-center ${currentView === 'food-analysis' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
+                >
+                  <Camera className="w-4 h-4 mr-1.5" />
+                  Voedingsscan
+                </button>
                 <button 
                   onClick={() => navigateTo('dashboard')}
                   className={`text-sm font-medium ${currentView === 'dashboard' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
                 >
                   Dashboard
+                </button>
+                <button 
+                  onClick={() => navigateTo('meal-logbook')}
+                  className={`text-sm font-medium flex items-center ${currentView === 'meal-logbook' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
+                >
+                  <Utensils className="w-4 h-4 mr-1.5" />
+                  Eetdagboek
                 </button>
                 <button 
                   onClick={() => navigateTo('community')}
@@ -1099,12 +1451,13 @@ export default function App() {
         <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
           <div className="px-4 pt-2 pb-4 space-y-1">
              <button onClick={() => navigateTo('home')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Home</button>
-             <button onClick={() => navigateTo('knowledge')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">KennisHub</button>
-             <button onClick={() => navigateTo('food-analysis')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Voedingsscan</button>
              
              {currentUser ? (
                <>
+                 <button onClick={() => navigateTo('knowledge')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">KennisHub</button>
+                 <button onClick={() => navigateTo('food-analysis')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Voedingsscan</button>
                  <button onClick={() => navigateTo('dashboard')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Mijn Dashboard</button>
+                 <button onClick={() => navigateTo('meal-logbook')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Eetdagboek</button>
                  <button onClick={() => navigateTo('community')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Het Trefpunt</button>
                  <button onClick={() => navigateTo('settings')} className="block w-full text-left py-3 text-slate-700 dark:text-slate-300 font-medium border-b border-slate-100 dark:border-slate-800">Instellingen</button>
                  <button onClick={handleLogout} className="block w-full text-left py-3 text-red-600 font-medium">Uitloggen</button>
@@ -1120,6 +1473,156 @@ export default function App() {
       )}
     </nav>
   );
+
+  const HomeView = () => (
+    <div className="animate-fade-in">
+      {/* Hero Section */}
+      <div className="relative bg-teal-700 overflow-hidden">
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1552674605-46d52604746d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
+            alt="Active lifestyle" 
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-800/80 mix-blend-multiply" />
+        </div>
+        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-6">
+            Fit, door dik en dun
+          </h1>
+          <p className="mt-6 text-xl text-teal-100 max-w-3xl">
+            Samen werken aan een gezonde leefstijl, speciaal ontwikkeld voor en door mannen met prostaatkanker.
+            Omdat een goede conditie het fundament is voor uw behandeling en herstel.
+          </p>
+          <div className="mt-10 flex space-x-4">
+            {!currentUser ? (
+              <>
+                <Button size="lg" className="!bg-slate-900 !text-white !hover:bg-slate-800" onClick={() => navigateTo('register')}>
+                  Start uw reis
+                </Button>
+                <Button size="lg" className="!bg-slate-900 !text-white !hover:bg-slate-800" onClick={() => navigateTo('login')}>
+                  Inloggen
+                </Button>
+              </>
+            ) : (
+               <Button size="lg" variant="secondary" onClick={() => navigateTo('dashboard')}>
+                  Naar mijn Dashboard
+                </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="text-center mb-12">
+             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Waarom meedoen?</h2>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
+                 <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center text-teal-600 mb-4">
+                   <Activity className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Fysieke Kracht</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Verbeter uw conditie voor een operatie of tijdens behandeling. Een sterker lichaam herstelt sneller.
+                 </p>
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
+                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 mb-4">
+                   <Users className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Samen Sterk</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Deel ervaringen en successen (anoniem) met lotgenoten in Het Trefpunt. U staat er niet alleen voor.
+                 </p>
+              </div>
+              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
+                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-indigo-600 mb-4">
+                   <Brain className="w-6 h-6" />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Kennis & Inzicht</h3>
+                 <p className="text-slate-600 dark:text-slate-400">
+                   Direct toegang tot betrouwbare medische informatie en leefstijladviezen van experts.
+                 </p>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const KnowledgeHubView = () => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">KennisHub</h2>
+        <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+          Betrouwbare informatie over voeding, beweging en herstel bij prostaatkanker.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {ARTICLES.map(article => (
+          <ArticleCard key={article.id} article={article} onClick={handleArticleClick} />
+        ))}
+      </div>
+
+      <div className="mt-16 bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-8 transition-colors duration-300">
+        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center">
+          <HelpCircle className="w-6 h-6 mr-2 text-teal-600" />
+          Veelgestelde Vragen
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           {FAQ_ITEMS.map(faq => (
+             <div key={faq.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-300">
+               <span className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-2 block">{faq.category}</span>
+               <h4 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h4>
+               <p className="text-sm text-slate-600 dark:text-slate-400">{faq.answer}</p>
+             </div>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const ArticleDetailView = () => {
+    if (!selectedArticle) return null;
+    return (
+      <div className="bg-white dark:bg-slate-900 min-h-screen animate-fade-in transition-colors duration-300">
+        <div className="relative h-96">
+           <img src={selectedArticle.imageUrl} alt={selectedArticle.title} className="w-full h-full object-cover" />
+           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
+           <div className="absolute bottom-0 left-0 right-0 p-8 max-w-7xl mx-auto">
+              <button 
+                onClick={() => navigateTo('knowledge')}
+                className="text-white/80 hover:text-white flex items-center mb-4 transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 rotate-180 mr-1" /> Terug naar overzicht
+              </button>
+              <span className="px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full uppercase tracking-wider mb-4 inline-block">
+                {selectedArticle.category}
+              </span>
+              <h1 className="text-4xl font-bold text-white mb-2">{selectedArticle.title}</h1>
+              <div className="flex items-center text-white/80 space-x-6">
+                 <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(selectedArticle.date).toLocaleDateString('nl-NL')}</span>
+                 <span className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> {selectedArticle.author}</span>
+              </div>
+           </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-6 py-12">
+           <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
+              <p className="lead text-xl text-slate-600 dark:text-slate-300 mb-8 font-medium">
+                {selectedArticle.excerpt}
+              </p>
+              <div className="whitespace-pre-line">
+                {selectedArticle.content}
+              </div>
+           </div>
+        </div>
+      </div>
+    );
+  };
 
   const CommunityView = () => {
       return (
@@ -1148,9 +1651,9 @@ export default function App() {
                           };
 
                           return (
-                              <div key={post.id} className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in">
+                              <div key={post.id} className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in transition-colors duration-300">
                                   <div className="flex items-start mb-4">
-                                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full mr-4">
+                                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full mr-4 transition-colors duration-300">
                                           {getIcon()}
                                       </div>
                                       <div>
@@ -1164,7 +1667,7 @@ export default function App() {
                                       </div>
                                   </div>
                                   
-                                  <div className="flex items-center space-x-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+                                  <div className="flex items-center space-x-4 border-t border-slate-100 dark:border-slate-800 pt-4 transition-colors duration-300">
                                       <button 
                                           onClick={() => handleReaction(post.id, 'heart')}
                                           className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('heart') ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
@@ -1202,7 +1705,7 @@ export default function App() {
       );
   };
   
-  const FoodAnalysisView = () => {
+  const FoodAnalysisView = ({ onAddMeal, onNavigateLogbook }: { onAddMeal: (m: { name: string; description: string; calories: number }) => void, onNavigateLogbook: () => void }) => {
     const [scanMode, setScanMode] = useState<'meal' | 'product'>('meal');
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -1291,7 +1794,7 @@ export default function App() {
     };
 
     return (
-      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in">
+      <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
            <div className="text-center mb-10">
              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Slimme Voedingsscan</h2>
@@ -1302,7 +1805,7 @@ export default function App() {
 
            {/* Mode Selector */}
            <div className="flex justify-center mb-8">
-             <div className="bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex">
+             <div className="bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex transition-colors duration-300">
                <button 
                  onClick={() => { setScanMode('meal'); setResult(null); }}
                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center ${scanMode === 'meal' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
@@ -1320,7 +1823,7 @@ export default function App() {
              </div>
            </div>
 
-           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors duration-300">
               
               {/* Upload Area / Camera View */}
               {!result && !analyzing && !showSuccess && (
@@ -1403,7 +1906,7 @@ export default function App() {
 
                     <div className="space-y-4 mb-8">
                       {result.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                        <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 transition-colors duration-300">
                           <div>
                             <p className="font-medium text-slate-900 dark:text-white">{item.name}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">{item.portion}</p>
@@ -1417,7 +1920,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800/50 flex items-start">
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800/50 flex items-start transition-colors duration-300">
                       <div className="bg-amber-100 dark:bg-amber-800/40 p-2 rounded-lg text-amber-600 dark:text-amber-400 mr-3 mt-0.5">
                         <Bot className="w-4 h-4" />
                       </div>
@@ -1428,6 +1931,22 @@ export default function App() {
                         </p>
                       </div>
                     </div>
+
+                    {/* Add to Logbook Button */}
+                    <Button 
+                      onClick={() => {
+                        onAddMeal({
+                          name: "Gescande Maaltijd", 
+                          description: `Bevat: ${result.items.map(i => i.name).join(', ')}.`,
+                          calories: result.totalCalories
+                        });
+                        onNavigateLogbook();
+                      }}
+                      className="w-full mt-4 flex items-center justify-center"
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      Toevoegen aan Eetdagboek
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1453,7 +1972,7 @@ export default function App() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                       <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-800/50">
+                       <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-800/50 transition-colors duration-300">
                           <h5 className="font-bold text-green-800 dark:text-green-300 mb-3 flex items-center">
                             <ThumbsUp className="w-4 h-4 mr-2" />
                             Pluspunten
@@ -1467,7 +1986,7 @@ export default function App() {
                           </ul>
                        </div>
                        
-                       <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-800/50">
+                       <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-800/50 transition-colors duration-300">
                           <h5 className="font-bold text-red-800 dark:text-red-300 mb-3 flex items-center">
                             <ThumbsDown className="w-4 h-4 mr-2" />
                             Aandachtspunten
@@ -1499,360 +2018,6 @@ export default function App() {
     );
   };
 
-  const HomeView = () => (
-    <div className="animate-fade-in">
-      {/* Hero Section */}
-      <div className="relative bg-teal-700 overflow-hidden">
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1552674605-46d52604746d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
-            alt="Active lifestyle" 
-            className="w-full h-full object-cover opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-800/80 mix-blend-multiply" />
-        </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-6">
-            Fit, door dik en dun
-          </h1>
-          <p className="mt-6 text-xl text-teal-100 max-w-3xl">
-            Samen werken aan een gezonde leefstijl, speciaal ontwikkeld voor en door mannen met prostaatkanker.
-            Omdat een goede conditie het fundament is voor uw behandeling en herstel.
-          </p>
-          <div className="mt-10 flex space-x-4">
-            {!currentUser ? (
-              <>
-                <Button size="lg" variant="secondary" onClick={() => navigateTo('register')}>
-                  Start uw reis
-                </Button>
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10" onClick={() => navigateTo('login')}>
-                  Inloggen
-                </Button>
-              </>
-            ) : (
-               <Button size="lg" variant="secondary" onClick={() => navigateTo('dashboard')}>
-                  Naar mijn Dashboard
-                </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="py-16 bg-white dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="text-center mb-12">
-             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Waarom meedoen?</h2>
-           </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                 <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center text-teal-600 mb-4">
-                   <Activity className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Fysieke Kracht</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Verbeter uw conditie voor een operatie of tijdens behandeling. Een sterker lichaam herstelt sneller.
-                 </p>
-              </div>
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 mb-4">
-                   <Users className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Samen Sterk</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Deel ervaringen en successen (anoniem) met lotgenoten in Het Trefpunt. U staat er niet alleen voor.
-                 </p>
-              </div>
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-indigo-600 mb-4">
-                   <Brain className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Kennis & Inzicht</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Direct toegang tot betrouwbare medische informatie en leefstijladviezen van experts.
-                 </p>
-              </div>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const KnowledgeHubView = () => (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">KennisHub</h2>
-        <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-          Betrouwbare informatie over voeding, beweging en herstel bij prostaatkanker.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {ARTICLES.map(article => (
-          <ArticleCard key={article.id} article={article} onClick={handleArticleClick} />
-        ))}
-      </div>
-
-      <div className="mt-16 bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-8">
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center">
-          <HelpCircle className="w-6 h-6 mr-2 text-teal-600" />
-          Veelgestelde Vragen
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {FAQ_ITEMS.map(faq => (
-             <div key={faq.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-               <span className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-2 block">{faq.category}</span>
-               <h4 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h4>
-               <p className="text-sm text-slate-600 dark:text-slate-400">{faq.answer}</p>
-             </div>
-           ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ArticleDetailView = () => {
-    if (!selectedArticle) return null;
-    return (
-      <div className="bg-white dark:bg-slate-900 min-h-screen animate-fade-in">
-        <div className="relative h-96">
-           <img src={selectedArticle.imageUrl} alt={selectedArticle.title} className="w-full h-full object-cover" />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
-           <div className="absolute bottom-0 left-0 right-0 p-8 max-w-7xl mx-auto">
-              <button 
-                onClick={() => navigateTo('knowledge')}
-                className="text-white/80 hover:text-white flex items-center mb-4 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5 rotate-180 mr-1" /> Terug naar overzicht
-              </button>
-              <span className="px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full uppercase tracking-wider mb-4 inline-block">
-                {selectedArticle.category}
-              </span>
-              <h1 className="text-4xl font-bold text-white mb-2">{selectedArticle.title}</h1>
-              <div className="flex items-center text-white/80 space-x-6">
-                 <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(selectedArticle.date).toLocaleDateString('nl-NL')}</span>
-                 <span className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> {selectedArticle.author}</span>
-              </div>
-           </div>
-        </div>
-        <div className="max-w-4xl mx-auto px-6 py-12">
-           <div className="prose prose-lg dark:prose-invert max-w-none">
-              <p className="lead text-xl text-slate-600 dark:text-slate-300 mb-8 font-medium">
-                {selectedArticle.excerpt}
-              </p>
-              <div className="text-slate-800 dark:text-slate-200">
-                {/* Simulated Content Rendering */}
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-                <h3 className="text-2xl font-bold mt-8 mb-4">Waarom dit belangrijk is</h3>
-                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                <ul className="list-disc pl-5 space-y-2 my-6">
-                  <li>Verbeterde fysieke gesteldheid</li>
-                  <li>Sneller herstel na behandeling</li>
-                  <li>Minder bijwerkingen van medicatie</li>
-                  <li>Betere mentale veerkracht</li>
-                </ul>
-                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
-              </div>
-           </div>
-        </div>
-      </div>
-    );
-  };
-
-  const DashboardView = () => {
-     if (!currentUser) return null;
-
-     const bmi = currentUser.profile.startWeight > 0 ? (currentUser.profile.startWeight / Math.pow(1.80, 2)).toFixed(1) : '-'; // Dummy height
-     const currentWeight = weightEntries.length > 0 
-        ? weightEntries[weightEntries.length - 1].weight 
-        : currentUser.profile.startWeight;
-     
-     const progress = currentUser.profile.startWeight - currentWeight;
-     
-     return (
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-         {/* Welcome Header */}
-         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-           <div>
-             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-               Dag {currentUser.profile.name}
-             </h1>
-             <p className="text-slate-600 dark:text-slate-400">
-               Laten we werken aan een sterker lichaam voor morgen.
-             </p>
-           </div>
-           
-           <div className="mt-4 md:mt-0 flex space-x-2">
-              <button 
-                onClick={handleOpenFreezeModal}
-                className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  freeFreezeActive 
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                    : medicalFreezeActive 
-                      ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {freeFreezeActive ? <PauseCircle className="w-4 h-4 mr-2" /> : 
-                 medicalFreezeActive ? <Stethoscope className="w-4 h-4 mr-2" /> :
-                 <Shield className="w-4 h-4 mr-2" />
-                }
-                {freeFreezeActive ? 'Rustdag Actief' : 
-                 medicalFreezeActive ? 'Medische Pauze' : 
-                 'Streak Beschermen'}
-              </button>
-           </div>
-         </div>
-
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           {/* Left Column: Input & Chart */}
-           <div className="lg:col-span-2 space-y-8">
-              
-              {/* Daily Input Card */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                    <Activity className="w-5 h-5 mr-2 text-teal-600" />
-                    Dagelijkse Check-in
-                  </h3>
-                  <span className="text-xs text-slate-400">{new Date().toLocaleDateString('nl-NL')}</span>
-                </div>
-
-                <form onSubmit={handleCombinedSubmit}>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      {CHECKIN_QUESTIONS.map(q => (
-                        <div key={q.id}>
-                          <div className="flex justify-between items-end mb-2">
-                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{q.label}</label>
-                             <span className="text-xs font-bold text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded">
-                               {checkInValues[q.id]}/10
-                             </span>
-                          </div>
-                          <input 
-                             type="range" min="1" max="10" 
-                             value={checkInValues[q.id]}
-                             onChange={(e) => setCheckInValues({...checkInValues, [q.id]: parseInt(e.target.value)})}
-                             className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                          />
-                          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-                             <span>{q.minLabel}</span>
-                             <span>{q.maxLabel}</span>
-                          </div>
-                        </div>
-                      ))}
-                   </div>
-
-                   <div className="border-t border-slate-100 dark:border-slate-700 pt-6">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                         Heeft u zich vandaag gewogen? (Optioneel)
-                      </label>
-                      <div className="flex space-x-4">
-                         <div className="relative flex-grow max-w-xs">
-                           <input 
-                             type="number" step="0.1"
-                             className="block w-full pl-10 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg focus:ring-teal-500 focus:border-teal-500"
-                             placeholder="0.0"
-                             value={combinedWeight}
-                             onChange={(e) => setCombinedWeight(e.target.value)}
-                           />
-                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                             <Scale className="h-5 w-5 text-slate-400" />
-                           </div>
-                           <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                             <span className="text-slate-500 sm:text-sm">kg</span>
-                           </div>
-                         </div>
-                         <Button type="submit">Opslaan</Button>
-                      </div>
-                   </div>
-                </form>
-              </div>
-
-              {/* Weight Chart */}
-              <WeightChart 
-                 data={weightEntries} 
-                 startWeight={currentUser.profile.startWeight}
-                 goalWeight={currentUser.profile.goalWeight}
-              />
-           </div>
-
-           {/* Right Column: Challenges & Badges */}
-           <div className="space-y-8">
-              
-              {/* Active Challenge Card */}
-              <div className={`rounded-xl shadow-sm border p-6 relative overflow-hidden ${
-                 activeChallenge ? 'bg-white dark:bg-slate-800 border-teal-200 dark:border-teal-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border-dashed'
-              }`}>
-                 <div className="flex justify-between items-start mb-4 relative z-10">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
-                       <Trophy className="w-5 h-5 mr-2 text-amber-500" />
-                       Huidige Challenge
-                    </h3>
-                    {activeChallenge && (
-                       <button onClick={handleStopChallengeClick} className="text-xs text-red-500 hover:text-red-700 underline">Stoppen</button>
-                    )}
-                 </div>
-
-                 {activeChallenge ? (
-                    <div className="relative z-10">
-                       <h4 className="text-xl font-bold text-teal-700 dark:text-teal-400 mb-2">{activeChallenge.title}</h4>
-                       <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{activeChallenge.description}</p>
-                       <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-1">
-                          <div className="bg-teal-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
-                       </div>
-                       <p className="text-xs text-slate-500 text-right">Dag 3 van {activeChallenge.duration.split(' ')[0]}</p>
-                    </div>
-                 ) : (
-                    <div className="text-center py-6 relative z-10">
-                       <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">U heeft nog geen actieve challenge.</p>
-                       <h4 className="font-bold text-slate-800 dark:text-white mb-4">Kies een uitdaging:</h4>
-                       <div className="space-y-3">
-                          {CHALLENGES.map(c => (
-                             <button 
-                               key={c.id}
-                               onClick={() => handleJoinChallenge(c)}
-                               className="w-full text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-teal-500 dark:hover:border-teal-500 bg-white dark:bg-slate-900 transition-all group"
-                             >
-                                <div className="flex justify-between">
-                                   <span className="font-medium text-slate-900 dark:text-white group-hover:text-teal-600">{c.title}</span>
-                                   <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-500">{c.duration}</span>
-                                </div>
-                             </button>
-                          ))}
-                       </div>
-                    </div>
-                 )}
-                 {/* Decorative background blob */}
-                 <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-teal-50 dark:bg-teal-900/20 rounded-full blur-2xl z-0 pointer-events-none"></div>
-              </div>
-
-              {/* Badges */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
-                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
-                    <Award className="w-5 h-5 mr-2 text-indigo-500" />
-                    Behaalde Badges
-                 </h3>
-                 <div className="grid grid-cols-4 gap-4">
-                    {BADGES.map(badge => {
-                       const Icon = IconMap[badge.iconName] || Activity;
-                       const isEarned = Math.random() > 0.6; // Simulation
-                       return (
-                          <div key={badge.id} className={`flex flex-col items-center group relative ${isEarned ? 'opacity-100' : 'opacity-40 grayscale'}`}>
-                             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 transition-transform group-hover:scale-110 ${isEarned ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
-                                <Icon className="w-6 h-6" />
-                             </div>
-                             <span className="text-[10px] text-center font-medium text-slate-600 dark:text-slate-400 leading-tight">{badge.title}</span>
-                          </div>
-                       );
-                    })}
-                 </div>
-              </div>
-           </div>
-         </div>
-       </div>
-     );
-  };
-
   const SettingsView = () => {
     if (!currentUser) return null;
     const { name, startWeight, goalWeight, carePathId } = currentUser.profile;
@@ -1868,14 +2033,14 @@ export default function App() {
         <div className="space-y-6">
            
            {/* Profile Section */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Profiel</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gebruikersnaam</label>
                     <input 
                       type="text" 
-                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                       value={localName}
                       onChange={(e) => setLocalName(e.target.value)}
                       onBlur={() => handleUpdateProfile({ name: localName })}
@@ -1883,24 +2048,24 @@ export default function App() {
                  </div>
                  <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mailadres</label>
-                    <input type="email" disabled value={currentUser.email} className="w-full rounded-lg border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed" />
+                    <input type="email" disabled value={currentUser.email} className="w-full rounded-lg border-slate-200 bg-slate-100 dark:bg-slate-900/50 dark:border-slate-700 text-slate-500 cursor-not-allowed transition-colors duration-300" />
                  </div>
               </div>
            </div>
 
            {/* Goals Section */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Doelen</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Gewicht (kg)</label>
-                    <input type="number" disabled value={startWeight} className="w-full rounded-lg border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed" />
+                    <input type="number" disabled value={startWeight} className="w-full rounded-lg border-slate-200 bg-slate-100 dark:bg-slate-900/50 dark:border-slate-700 text-slate-500 cursor-not-allowed transition-colors duration-300" />
                  </div>
                  <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Doel Gewicht (kg)</label>
                     <input 
                       type="number" step="0.1"
-                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                      className="w-full rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                       value={localGoal}
                       onChange={(e) => setLocalGoal(parseFloat(e.target.value))}
                       onBlur={() => handleUpdateProfile({ goalWeight: localGoal })}
@@ -1910,7 +2075,7 @@ export default function App() {
            </div>
 
            {/* Care Path Section */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Behandelfase (Zorgpad)</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Selecteer uw huidige situatie zodat wij de tips kunnen personaliseren.
@@ -1920,13 +2085,13 @@ export default function App() {
                     <div 
                       key={path.id}
                       onClick={() => handleUpdateProfile({ carePathId: path.id as any })}
-                      className={`cursor-pointer border rounded-lg p-4 flex items-start transition-colors ${
+                      className={`cursor-pointer border rounded-lg p-4 flex items-start transition-colors duration-300 ${
                         carePathId === path.id 
                           ? 'bg-teal-50 border-teal-500 dark:bg-teal-900/20 dark:border-teal-500' 
-                          : 'border-slate-200 dark:border-slate-700 hover:border-teal-300'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-slate-500'
                       }`}
                     >
-                      <div className={`p-2 rounded-full mr-3 ${carePathId === path.id ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500'}`}>
+                      <div className={`p-2 rounded-full mr-3 ${carePathId === path.id ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
                          <path.icon className="w-5 h-5" />
                       </div>
                       <div>
@@ -1940,21 +2105,21 @@ export default function App() {
            </div>
 
            {/* Appearance */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6">
+           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 border-b border-slate-100 dark:border-slate-700 pb-2">Uiterlijk</h3>
               <div className="flex items-center justify-between">
                  <span className="text-slate-700 dark:text-slate-300">Donkere modus</span>
                  <button 
                    onClick={toggleTheme}
-                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${currentUser.profile.themePreference === 'dark' ? 'bg-teal-600' : 'bg-slate-300'}`}
+                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${currentUser.profile.themePreference === 'dark' ? 'bg-teal-600' : 'bg-slate-300'}`}
                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${currentUser.profile.themePreference === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${currentUser.profile.themePreference === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
                  </button>
               </div>
            </div>
 
            {/* Danger Zone */}
-           <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 p-6">
+           <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 p-6 transition-colors duration-300">
               <h3 className="text-lg font-bold text-red-800 dark:text-red-400 mb-2">Gevarenzone</h3>
               <p className="text-sm text-red-600 dark:text-red-300 mb-4">
                  Het verwijderen van uw account is permanent en kan niet ongedaan worden gemaakt.
@@ -1969,7 +2134,7 @@ export default function App() {
   };
 
   const Footer = () => (
-    <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12">
+    <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 mt-12 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
@@ -1985,8 +2150,15 @@ export default function App() {
                <h4 className="font-bold text-slate-900 dark:text-white mb-4">Snel naar</h4>
                <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
                   <li><button onClick={() => navigateTo('home')} className="hover:text-teal-600">Home</button></li>
-                  <li><button onClick={() => navigateTo('knowledge')} className="hover:text-teal-600">KennisHub</button></li>
-                  <li><button onClick={() => navigateTo('community')} className="hover:text-teal-600">Het Trefpunt</button></li>
+                  {currentUser && (
+                    <>
+                      <li><button onClick={() => navigateTo('knowledge')} className="hover:text-teal-600">KennisHub</button></li>
+                      <li><button onClick={() => navigateTo('community')} className="hover:text-teal-600">Het Trefpunt</button></li>
+                    </>
+                  )}
+                  {!currentUser && (
+                    <li><button onClick={() => navigateTo('login')} className="hover:text-teal-600">Inloggen</button></li>
+                  )}
                </ul>
             </div>
             <div>
@@ -2010,8 +2182,6 @@ export default function App() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
-      {/* ... (Animations, Modals) ... */}
-      
       {/* Success Overlay Animation */}
       {activeAnimation && (
         <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-slate-950/95 flex items-center justify-center animate-fade-in">
@@ -2023,8 +2193,8 @@ export default function App() {
 
       {/* Simulated Email Notification (For Demo Purposes) */}
       {simulatedEmail && (
-        <div className="fixed top-24 right-4 z-[120] max-w-sm w-full bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-700 animate-slide-in-right overflow-hidden">
-          <div className="bg-slate-100 dark:bg-slate-900 p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="fixed top-24 right-4 z-[120] max-w-sm w-full bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-700 animate-slide-in-right overflow-hidden transition-colors duration-300">
+          <div className="bg-slate-100 dark:bg-slate-900 p-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center transition-colors duration-300">
             <div className="flex items-center space-x-2">
               <Mail className="w-4 h-4 text-slate-500" />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Nieuw bericht</span>
@@ -2055,7 +2225,7 @@ export default function App() {
       {/* Stop Challenge Modal */}
       {showStopChallengeModal && (
         <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700 transition-colors duration-300">
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Challenge Stoppen</h3>
                <button onClick={() => setShowStopChallengeModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
@@ -2064,7 +2234,7 @@ export default function App() {
                Wat vervelend dat u stopt, maar uw gezondheid gaat voor. Kunt u aangeven waarom u stopt? Dit helpt ons de app te verbeteren.
              </p>
              <textarea 
-               className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 mb-4 text-sm dark:bg-slate-800 dark:text-white"
+               className="w-full border border-slate-300 dark:border-slate-700 rounded-lg p-3 mb-4 text-sm dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                rows={3}
                placeholder="Reden van stoppen..."
                value={stopReason}
@@ -2081,7 +2251,7 @@ export default function App() {
       {/* Advanced Streak Freeze Modal */}
       {showFreezeModal && (
         <div className="fixed inset-0 z-[110] bg-black/50 flex items-center justify-center p-4">
-           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto transition-colors duration-300">
              <div className="flex justify-between items-center mb-6">
                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
                  <PauseCircle className="w-6 h-6 mr-2 text-teal-600" />
@@ -2091,7 +2261,7 @@ export default function App() {
              </div>
              
              {/* Option 1: Monthly Free Freeze */}
-             <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+             <div className="mb-8 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 transition-colors duration-300">
                 <div className="flex items-start mb-3">
                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 mr-3">
                      <Calendar className="w-5 h-5" />
@@ -2106,14 +2276,14 @@ export default function App() {
                      Neem Gratis Rustdag
                    </Button>
                 ) : (
-                   <div className="text-center p-2 bg-slate-200 dark:bg-slate-700 rounded text-xs text-slate-500">
+                   <div className="text-center p-2 bg-slate-200 dark:bg-slate-700 rounded text-xs text-slate-500 transition-colors duration-300">
                      Reeds gebruikt deze maand. Beschikbaar op 1e van volgende maand.
                    </div>
                 )}
              </div>
 
              {/* Option 2: Medical Freeze */}
-             <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+             <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800 transition-colors duration-300">
                 <div className="flex items-start mb-4">
                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg text-indigo-600 mr-3">
                      <Stethoscope className="w-5 h-5" />
@@ -2131,7 +2301,7 @@ export default function App() {
                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Startdatum</label>
                      <input 
                        type="date" 
-                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                        value={medicalStartDate}
                        onChange={(e) => setMedicalStartDate(e.target.value)}
                      />
@@ -2140,7 +2310,7 @@ export default function App() {
                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">Einddatum (schatting)</label>
                      <input 
                        type="date" 
-                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+                       className="w-full text-sm p-2 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                        value={medicalEndDate}
                        onChange={(e) => setMedicalEndDate(e.target.value)}
                      />
@@ -2155,6 +2325,96 @@ export default function App() {
         </div>
       )}
 
+      {/* Floating Chat Widget - RESTRICTED TO LOGGED IN USERS */}
+      {currentUser && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+          {isChatOpen && (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl mb-4 w-80 sm:w-96 h-[500px] flex flex-col border border-slate-200 dark:border-slate-800 animate-fade-in overflow-hidden transition-colors duration-300">
+              {/* Chat Header */}
+              <div className="bg-teal-600 p-4 flex justify-between items-center text-white">
+                <div className="flex items-center">
+                  <Bot className="w-6 h-6 mr-2" />
+                  <div>
+                    <h3 className="font-bold text-sm">VitaBot</h3>
+                    <span className="text-teal-100 text-xs flex items-center">
+                      <span className="w-2 h-2 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
+                      Online Leefstijlcoach
+                    </span>
+                  </div>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="text-white/80 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+                  {chatMessages.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+                        msg.role === 'user' 
+                          ? 'bg-teal-600 text-white rounded-br-none' 
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
+                      }`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                  {isChatLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-bl-none px-4 py-3 border border-slate-100 dark:border-slate-700 transition-colors duration-300">
+                        <div className="flex space-x-1.5">
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></div>
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <form onSubmit={handleChatSubmit} className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 transition-colors duration-300">
+                <div className="flex items-center space-x-2">
+                  <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Stel een vraag..."
+                      className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-300"
+                      disabled={isChatLoading}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={!chatInput.trim() || isChatLoading}
+                    className="bg-teal-600 text-white p-2.5 rounded-full hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 text-center mt-2">
+                  VitaBot geeft geen medisch advies.
+                </p>
+              </form>
+            </div>
+          )}
+
+          {/* Toggle Button */}
+          <button 
+            onClick={() => setIsChatOpen(!isChatOpen)}
+            className="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
+          >
+            {isChatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+            {!isChatOpen && (
+              <span className="absolute right-full mr-4 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Stel een vraag aan VitaBot
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       <Navbar />
       <main className="flex-grow">
         {currentView === 'home' && <HomeView />}
@@ -2164,100 +2424,41 @@ export default function App() {
         {currentView === 'register' && <RegisterView onRegister={handleRegister} onNavigateLogin={() => navigateTo('login')} />}
         {currentView === 'knowledge' && <KnowledgeHubView />}
         {currentView === 'article-detail' && <ArticleDetailView />}
-        {currentView === 'dashboard' && <DashboardView />}
-        {currentView === 'settings' && <SettingsView />}
-        {currentView === 'food-analysis' && <FoodAnalysisView />}
-        {currentView === 'community' && <CommunityView />}
-      </main>
-
-      {/* Floating Chat Widget */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        {isChatOpen && (
-           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl mb-4 w-80 sm:w-96 h-[500px] flex flex-col border border-slate-200 dark:border-slate-800 animate-fade-in overflow-hidden">
-             {/* Chat Header */}
-             <div className="bg-teal-600 p-4 flex justify-between items-center text-white">
-               <div className="flex items-center">
-                 <Bot className="w-6 h-6 mr-2" />
-                 <div>
-                   <h3 className="font-bold text-sm">VitaBot</h3>
-                   <span className="text-teal-100 text-xs flex items-center">
-                     <span className="w-2 h-2 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
-                     Online Leefstijlcoach
-                   </span>
-                 </div>
-               </div>
-               <button onClick={() => setIsChatOpen(false)} className="text-white/80 hover:text-white transition-colors">
-                 <X className="w-5 h-5" />
-               </button>
-             </div>
-
-             {/* Chat Messages */}
-             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
-                {chatMessages.map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-teal-600 text-white rounded-br-none' 
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none'
-                    }`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                {isChatLoading && (
-                   <div className="flex justify-start">
-                     <div className="bg-white dark:bg-slate-800 rounded-2xl rounded-bl-none px-4 py-3 border border-slate-100 dark:border-slate-700">
-                       <div className="flex space-x-1.5">
-                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></div>
-                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></div>
-                       </div>
-                     </div>
-                   </div>
-                )}
-                <div ref={messagesEndRef} />
-             </div>
-
-             {/* Chat Input */}
-             <form onSubmit={handleChatSubmit} className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-               <div className="flex items-center space-x-2">
-                 <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Stel een vraag..."
-                    className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    disabled={isChatLoading}
-                 />
-                 <button 
-                  type="submit" 
-                  disabled={!chatInput.trim() || isChatLoading}
-                  className="bg-teal-600 text-white p-2.5 rounded-full hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                 >
-                   <Send className="w-4 h-4" />
-                 </button>
-               </div>
-               <p className="text-[10px] text-slate-400 text-center mt-2">
-                 VitaBot geeft geen medisch advies.
-               </p>
-             </form>
-           </div>
+        {currentView === 'dashboard' && currentUser && (
+          <DashboardView 
+            currentUser={currentUser}
+            weightEntries={weightEntries}
+            checkInEntries={checkInEntries}
+            combinedWeight={combinedWeight}
+            setCombinedWeight={setCombinedWeight}
+            checkInValues={checkInValues}
+            setCheckInValues={setCheckInValues}
+            handleCombinedSubmit={handleCombinedSubmit}
+            handleOpenFreezeModal={handleOpenFreezeModal}
+            freeFreezeActive={freeFreezeActive}
+            medicalFreezeActive={medicalFreezeActive}
+            activeChallenge={activeChallenge}
+            handleStopChallengeClick={handleStopChallengeClick}
+            handleJoinChallenge={handleJoinChallenge}
+            isDark={isDark}
+          />
         )}
-
-        {/* Toggle Button */}
-        <button 
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className="bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center group"
-        >
-          {isChatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-          {!isChatOpen && (
-            <span className="absolute right-full mr-4 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-              Stel een vraag aan VitaBot
-            </span>
-          )}
-        </button>
-      </div>
-
+        {currentView === 'settings' && <SettingsView />}
+        {currentView === 'food-analysis' && (
+          <FoodAnalysisView 
+            onAddMeal={handleAddMeal} 
+            onNavigateLogbook={() => navigateTo('meal-logbook')} 
+          />
+        )}
+        {currentView === 'community' && <CommunityView />}
+        {currentView === 'meal-logbook' && currentUser && (
+          <MealLogbook 
+            entries={mealEntries} 
+            onAdd={handleAddMeal}
+            onDelete={handleDeleteMeal}
+          />
+        )}
+      </main>
       <Footer />
     </div>
   );

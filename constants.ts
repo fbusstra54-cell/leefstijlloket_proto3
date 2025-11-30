@@ -4,6 +4,61 @@ import { Activity, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export const ARTICLES: Article[] = [
   {
+    id: '5',
+    title: 'Prostaatkanker en lifestyle: hoezo?!',
+    excerpt: 'Net nu je weet dat prostaatkanker is vastgesteld, moet je ook nog je leefstijl aanpassen. Waarom dat juist nu zinvol is.',
+    category: 'Medisch',
+    content: `Het is misschien wat vreemd: Net nu je weet dat prostaatkanker is vastgesteld, moet je nu ook nog eens je leefstijl gaan aanpassen. Hopelijk kan wat uitleg dat gevoel verzachten of zelfs enthousiasmeren: zelf weer aan het roer!
+
+Prostaatkanker is een aandoening die vele gezichten kent. In meer dan de helft van de gevallen is behandeling (nog) niet nodig. Soms is directe behandeling juist wel zinvol maar zelfs dan is er vaak wat te optimaliseren. En soms wordt prostaatkanker in een laat stadium ontdekt waarbij meteen wordt gezegd: genezing is niet meer mogelijk. Maar ook dan kan leefstijl een wereld van verschil uitmaken. Hieronder zetten we de verschillende situaties onder elkaar.
+
+1. Prostaatkanker in een vroeg stadium (Active Surveillance)
+Niet agressief, genezende behandeling kan worden uitgesteld. Dat noemen we dan active surveillance; Uitstel van een genezende behandeling. Dus ook uitstel van bijwerkingen daarvan. Ook indien je nooit zou behandeling dan zal deze vorm van prostaatkanker pas na 15-20 jaar levensbedreigend worden. Of nooit. Maar na 10 jaar zal toch de helft van de mensen wel behandeld zijn. Dan is het jammer als andere aandoeningen, overgewicht of een matige conditie je behandelkeuzes hebben verkleind.
+
+2. Prostaatkanker in een vroeg stadium (Watchful Waiting)
+Niet agressief, genezende behandeling is niet nodig omdat verwacht wordt dat andere aandoeningen of zeer hoge leeftijd eerder van belang worden. Dat noemen we dan watchfull waiting; Uitstel van een remmende ('palliatieve') behandeling. Dus ook uitstel van bijwerkingen daarvan. Toch kan het zijn dat er na een aantal jaren uitzaaiingen optreden en remmende behandelingen nodig zijn. Die worden veel beter verdragen als je in topconditie bent, als je niet meer rookt, als je alcohol bent gaan matigen en overgewicht hebt weten terug te dringen.
+
+3. Prostaatkanker in een vroeg stadium, genezing is goed mogelijk
+Behandeling is binnen 3 maanden aangewezen. Zo’n behandeling kan bijwerkingen hebben of risico’s.
+
+- Als de prostaat met een operatie moet worden verwijderd: het narcoserisico is kleiner als er minder of geen overgewicht is. En als roken wordt gestopt. En als je conditie verbetert. Je lijf en je hart moeten, indien onder narcose, hard aan de slag. Vergelijk het met een hardloop wedstrijd. Dat gaat al veel beter als je 6 weken getraind hebt.
+
+- Als de prostaat moet worden bestraald: bijwerkingen zoals moeheid en malaise kunnen verminderen als je conditie op pijl is en als beweging onderdeel is gaan uitmaken van je dagelijkse routines. Misschien maakt het de gang naar en van het ziekenhuis ook net wat makkelijker.
+
+- Als de prostaat wordt bestraald maar ook tijdelijk hormoontherapie moet worden gestart: de bijwerkingen van hormoontherapie worden veel beter verdragen als je in topconditie bent, als je niet meer rookt, als je alcohol bent gaan matigen en overgewicht hebt weten terug te dringen.
+
+4. Prostaatkanker in een laat stadium
+Genezing is niet mogelijk. Er zijn uitzaaiingen.
+
+- Als het weefselonderzoek en de overige uitslagen duiden op een langzaam groeiend proces dan kan gekozen worden voor watchfull waiting, uitstel van remmende ('palliatieve') behandelingen.
+
+- Als het weefselonderzoek en de overige uitslagen duiden op een snel groeiend proces dan kan geadviseerd worden meteen te starten met remmende ('palliatieve') behandelingen. De basis is dan altijd hormoontherapie. Het mannelijke hormoon Testosteron veroorzaakt namelijk groei van de tumorcellen. Remmen van Testosteron remt dus te tumor af. De tumor zelf en de uitzaaiingen worden kleiner. Helaas geeft zo’n behandeling bijwerkingen.
+
+Veelvoorkomende bijwerkingen van hormoontherapie:
+- Energievermindering, krachtverlies en afname van spiermassa
+- Opvliegers (bij de meeste mannen de irritantste bijwerking)
+- Afname van seksueel verlangen (libido)
+- Risico op botontkalking
+- Gewichtstoename
+- Toename risico op hart- en vaatziekten
+- Vertraging denkvermogen/cognitie
+- Beïnvloeding gemoedstoestand
+- Stijver worden van gewrichten
+
+Hoe leefstijl hierbij helpt:
+Bijwerkingen worden veel beter verdragen als je in topconditie bent.
+- Energievermindering is beduidend minder als je 3 maal daags actief bent. Beter 3 maal per dag wat wandelen dan eenmaal per dag overbelasten.
+- Kans op botontkalking is kleiner als je dagelijks je botten belast met bewegen. En Vitaminde D en Calcium natuurlijk.
+- Stijfheid van gewrichten is lastig te verhelpen. Maar rustige bewegingen zoals wandelen of zwemmen houdt de gewrichten beter soepel dan steeds minder gaan doen.
+- Hart- en vaatziekten treden minder snel op als je actief bent, je gewicht weet te verminderen en als je niet rookt.
+
+Kortom:
+Je kan een hoop zelf doen om je vooruitzichten te verbeteren. Uw lijf verdient meer aandacht dan die vervelende ziekte. En daar kunt u zelf iets aan doen. 95% van de mensen heeft daar wat hulp bij nodig om verbeteringen langer dan een maand te laten duren. Dus schroom niet om hulp te vragen. Als u hulp nodig hebt dan bent u een gemiddeld mens. Als u hulp vraagt, bent u bovengemiddeld! Juist dát helpt u verder! Uw kwaliteit van leven maakt dan sprongen!`,
+    imageUrl: 'https://picsum.photos/id/191/800/600',
+    date: '2023-11-20',
+    author: 'Dr. M. Busstra'
+  },
+  {
     id: '1',
     title: 'De Rol van Voeding bij Herstel',
     excerpt: 'Hoe een uitgebalanceerd dieet kan bijdragen aan uw energieniveau en herstel tijdens de behandeling.',

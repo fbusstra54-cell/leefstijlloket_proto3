@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   AreaChart,
@@ -16,9 +17,10 @@ interface WeightChartProps {
   data: WeightEntry[];
   goalWeight: number;
   startWeight: number;
+  isDark?: boolean;
 }
 
-export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, startWeight }) => {
+export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, startWeight, isDark = false }) => {
   // Sort data by date
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -27,6 +29,13 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
     const date = new Date(dateStr);
     return `${date.getDate()}/${date.getMonth() + 1}`;
   };
+
+  // Colors based on theme
+  const axisColor = isDark ? '#94a3b8' : '#64748b';
+  const gridColor = isDark ? '#334155' : '#e2e8f0';
+  const tooltipBg = isDark ? '#1e293b' : '#ffffff';
+  const tooltipText = isDark ? '#f1f5f9' : '#1e293b';
+  const tooltipBorder = isDark ? '#334155' : '#f1f5f9';
 
   // Custom Dot Component to highlight the last entry
   const CustomDot = (props: any) => {
@@ -54,7 +63,7 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
 
   if (data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 border-dashed">
+      <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 border-dashed transition-colors duration-300">
         <p className="text-slate-400">Nog geen data beschikbaar om te tonen</p>
       </div>
     );
@@ -66,7 +75,7 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
   const maxWeight = Math.max(...weights, goalWeight, startWeight) + 2;
 
   return (
-    <div className="w-full h-[400px] bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+    <div className="w-full h-[400px] bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-300 select-none">
       <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Gewichtsverloop</h3>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
@@ -84,11 +93,11 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
               <stop offset="95%" stopColor="#0d9488" stopOpacity={0}/>
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" opacity={0.2} vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
           <XAxis 
             dataKey="date" 
             tickFormatter={formatDate}
-            stroke="#94a3b8"
+            stroke={axisColor}
             fontSize={12}
             tickMargin={10}
             tickLine={false}
@@ -96,7 +105,7 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
           />
           <YAxis 
             domain={[Math.floor(minWeight), Math.ceil(maxWeight)]} 
-            stroke="#94a3b8"
+            stroke={axisColor}
             fontSize={12}
             unit=" kg"
             tickLine={false}
@@ -104,18 +113,31 @@ export const WeightChart: React.FC<WeightChartProps> = ({ data, goalWeight, star
           />
           <Tooltip 
             contentStyle={{ 
-              backgroundColor: 'var(--tooltip-bg, #fff)', 
-              color: 'var(--tooltip-text, #1e293b)',
+              backgroundColor: tooltipBg, 
+              color: tooltipText,
               borderRadius: '12px', 
-              border: 'none', 
-              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' 
+              border: `1px solid ${tooltipBorder}`, 
+              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+              outline: 'none'
             }}
+            cursor={{ stroke: axisColor, strokeWidth: 1 }}
             formatter={(value: number) => [`${value} kg`, 'Gewicht']}
             labelFormatter={(label: string) => new Date(label).toLocaleDateString('nl-NL')}
+            itemStyle={{ color: isDark ? '#fff' : '#1e293b' }}
           />
-          <Legend iconType="circle" />
-          <ReferenceLine y={startWeight} label={{ position: 'insideBottomRight', value: 'Start', fill: '#94a3b8', fontSize: 12 }} stroke="#94a3b8" strokeDasharray="3 3" />
-          <ReferenceLine y={goalWeight} label={{ position: 'insideBottomRight', value: 'Doel', fill: '#10b981', fontSize: 12 }} stroke="#10b981" strokeDasharray="3 3" />
+          <Legend iconType="circle" wrapperStyle={{ color: axisColor }} />
+          <ReferenceLine 
+            y={startWeight} 
+            label={{ position: 'insideBottomRight', value: 'Start', fill: '#94a3b8', fontSize: 12 }} 
+            stroke="#94a3b8" 
+            strokeDasharray="3 3" 
+          />
+          <ReferenceLine 
+            y={goalWeight} 
+            label={{ position: 'insideBottomRight', value: 'Doel', fill: '#10b981', fontSize: 12 }} 
+            stroke="#10b981" 
+            strokeDasharray="3 3" 
+          />
           <Area
             type="monotone"
             dataKey="weight"
