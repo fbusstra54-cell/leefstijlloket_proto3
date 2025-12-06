@@ -15,8 +15,7 @@ export const MealLogbook: React.FC<MealLogbookProps> = ({ entries, onAdd, onDele
   const [description, setDescription] = useState('');
   const [calories, setCalories] = useState('');
   
-  // Filter for today by default or allow selection (simplified to today/all)
-  // For now, let's just group them by date for display
+  // Sort entries descending (Newest first)
   const sortedEntries = [...entries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Group entries by date
@@ -28,7 +27,8 @@ export const MealLogbook: React.FC<MealLogbookProps> = ({ entries, onAdd, onDele
     groupedEntries[entry.date].push(entry);
   });
 
-  const dates = Object.keys(groupedEntries);
+  // Explicitly sort the dates descending to ensure newest days are at the top
+  const dates = Object.keys(groupedEntries).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

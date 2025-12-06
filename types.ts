@@ -49,9 +49,18 @@ export interface UserProfile {
   name: string; // Pseudonym preferred
   startWeight: number;
   goalWeight: number;
+  height: number; // in cm
+  gender: 'man' | 'vrouw' | 'anders';
   themePreference?: 'light' | 'dark';
+  
+  // Gamification fields
+  points: number;
+  level: string; // 'Starter' | 'Doorzetter' | 'Krachtpatser' | 'VitaMeester'
+
   activeChallengeId?: string | null; // Track the single active challenge
+  activeChallengeStartDate?: string | null; // ISO Date string when the challenge was started
   carePathId?: CarePathId | null; // The selected medical care path
+  hasSeenOnboarding?: boolean; // Flag for dashboard tour
   
   // New fields for Freeze/Pause logic
   lastFreeFreezeDate?: string | null; // ISO Date string of last used free freeze

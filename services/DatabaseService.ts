@@ -38,10 +38,13 @@ class DatabaseService {
 
     const passwordHash = await hashPassword(password);
     
-    // Ensure activeChallengeId is set, even if profile doesn't have it explicitly yet (defensive)
+    // Ensure gamification and other fields are set
     const finalProfile: UserProfile = {
         ...profile,
-        activeChallengeId: profile.activeChallengeId || null
+        activeChallengeId: profile.activeChallengeId || null,
+        hasSeenOnboarding: false, // Default to false for new users
+        points: 0, // Start with 0 points
+        level: 'Starter' // Start at level 1
     };
 
     const newUser: User = {

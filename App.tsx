@@ -52,7 +52,14 @@ import {
   Lock,
   ArrowLeft,
   Hand,
-  Share2
+  Share2,
+  Eye,
+  EyeOff,
+  Info,
+  History,
+  Edit2,
+  Save,
+  Star
 } from 'lucide-react';
 import { GoogleGenAI, Chat } from "@google/genai";
 import { Button } from './components/Button';
@@ -60,7 +67,7 @@ import { ArticleCard } from './components/ArticleCard';
 import { WeightChart } from './components/WeightChart';
 import { MealLogbook } from './components/MealLogbook';
 import { Article, UserProfile, WeightEntry, DailyCheckIn, User, FAQItem, Badge, Challenge, CommunityPost, ReactionType, MealEntry } from './types';
-import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES, CARE_PATHS, MOCK_COMMUNITY_POSTS } from './constants';
+import { ARTICLES, FAQ_ITEMS, CHECKIN_QUESTIONS, BADGES, CHALLENGES, CARE_PATHS, MOCK_COMMUNITY_POSTS, POINTS, LEVELS } from './constants';
 import { db } from './services/DatabaseService';
 
 // ---- Views Enum ----
@@ -75,6 +82,7 @@ interface FoodItem {
   name: string;
   calories: number;
   portion: string;
+  estimatedWeightGrams?: number;
 }
 
 interface FoodAnalysisResult {
@@ -230,11 +238,63 @@ const ZenAnimation = () => (
   </div>
 );
 
+// ---- UI Components for BMI ----
+
+const BMIChart = ({ height, weight }: { height: number; weight: number }) => {
+  const heightM = height / 100;
+  const bmi = weight / (heightM * heightM);
+  
+  // Calculate marker position (limit between 0 and 100%)
+  // Range displayed: 15 to 35 BMI for visual clarity
+  const minDisplay = 15;
+  const maxDisplay = 35;
+  const percentage = Math.max(0, Math.min(100, ((bmi - minDisplay) / (maxDisplay - minDisplay)) * 100));
+
+  return (
+    <div className="w-full mt-4 mb-2">
+      <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+        <span>Ondergewicht</span>
+        <span>Gezond (18.5-25)</span>
+        <span>Overgewicht</span>
+        <span>Obesitas</span>
+      </div>
+      <div className="h-6 w-full rounded-full overflow-hidden flex relative bg-slate-200">
+        {/* Ranges */}
+        {/* Underweight < 18.5. (18.5 - 15) / 20 * 100 = 17.5% of bar */}
+        <div className="h-full bg-blue-300 w-[17.5%]" title="Ondergewicht"></div>
+        {/* Normal 18.5 - 25. (6.5) / 20 * 100 = 32.5% */}
+        <div className="h-full bg-green-500 w-[32.5%]" title="Gezond Gewicht"></div>
+        {/* Overweight 25 - 30. (5) / 20 * 100 = 25% */}
+        <div className="h-full bg-orange-400 w-[25%]" title="Overgewicht"></div>
+        {/* Obese > 30. Remaining */}
+        <div className="h-full bg-red-500 flex-grow" title="Obesitas"></div>
+
+        {/* Marker - Color softened to slate-700/white based on user feedback */}
+        <div 
+          className="absolute top-0 bottom-0 w-1 bg-slate-700 dark:bg-white border border-white/50 shadow-md transition-all duration-500"
+          style={{ left: `${percentage}%` }}
+        ></div>
+      </div>
+      <div className="text-center mt-2">
+        <span className="font-bold text-slate-800 dark:text-white">Uw BMI: {bmi.toFixed(1)}</span>
+      </div>
+      
+      <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-100 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 flex items-start">
+         <Info className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+         <p>
+           Let op: BMI is een indicatie. Een 'niet-normaal' BMI betekent niet per se dat u ongezond bent. Spiermassa, botdichtheid en vochtbalans spelen een grote rol. Overleg altijd met uw arts.
+         </p>
+      </div>
+    </div>
+  );
+};
+
 // ---- Extracted Components (to prevent re-render issues) ----
 
 const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin: (e: string, p: string) => void, onNavigateRegister: () => void, onNavigateForgot: () => void }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
@@ -270,14 +330,23 @@ const LoginView = ({ onLogin, onNavigateRegister, onNavigateForgot }: { onLogin:
                    Wachtwoord vergeten?
                  </button>
               </div>
-              <input
-                type="password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-slate-300 dark:border-slate-700 placeholder-slate-500 dark:placeholder-slate-600 text-slate-900 dark:text-white dark:bg-slate-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm transition-colors duration-300"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
           <Button type="submit" className="w-full flex justify-center">Inloggen</Button>
@@ -395,24 +464,94 @@ const ResetPasswordView = ({ onReset }: { onReset: (p: string) => void }) => {
   );
 };
 
-const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string, p: string, n: string, s: number, g: number) => void, onNavigateLogin: () => void }) => {
+const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string, p: string, n: string, s: number, g: number, h: number, gen: 'man'|'vrouw'|'anders') => void, onNavigateLogin: () => void }) => {
   const [formData, setFormData] = useState({
-    email: '', password: '', name: '', startWeight: '', goalWeight: ''
+    email: '', password: '', name: '', startWeight: '', goalWeight: '', height: '', gender: 'man'
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // BMI Advisor Modal State
+  const [showBMIAdvisor, setShowBMIAdvisor] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      alert('Wachtwoorden komen niet overeen. Controleer uw wachtwoorden.');
+      return;
+    }
+    
     onRegister(
       formData.email, 
       formData.password, 
       formData.name, 
-      parseFloat(formData.startWeight), 
-      parseFloat(formData.goalWeight)
+      parseFloat(formData.startWeight.replace(',', '.')), 
+      parseFloat(formData.goalWeight.replace(',', '.')),
+      parseInt(formData.height),
+      formData.gender as 'man'|'vrouw'|'anders'
     );
+  };
+
+  const openBMIAdvisor = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!formData.height || !formData.startWeight) {
+        alert("Vul eerst uw lengte en startgewicht in.");
+        return;
+    }
+    setShowBMIAdvisor(true);
+  };
+
+  const calculateHealthyRange = () => {
+      const h = parseInt(formData.height) / 100;
+      if (isNaN(h) || h === 0) return { min: 0, max: 0 };
+      const min = 18.5 * h * h;
+      const max = 25 * h * h;
+      const ideal = 22 * h * h; // Middle of healthy range
+      return { min, max, ideal };
+  };
+
+  const setIdealAsGoal = () => {
+      const { ideal } = calculateHealthyRange();
+      setFormData({...formData, goalWeight: ideal.toFixed(1)});
+      setShowBMIAdvisor(false);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in transition-colors duration-300">
+      
+      {/* BMI Advisor Modal */}
+      {showBMIAdvisor && (
+          <div className="fixed inset-0 z-[150] bg-black/50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">BMI Advies</h3>
+                      <button onClick={() => setShowBMIAdvisor(false)}><X className="w-5 h-5 text-slate-400" /></button>
+                  </div>
+                  
+                  <div className="mb-4">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mb-2">
+                          Op basis van uw lengte ({formData.height} cm) en startgewicht ({formData.startWeight} kg):
+                      </p>
+                      <BMIChart 
+                        height={parseInt(formData.height)} 
+                        weight={parseFloat(formData.startWeight.replace(',', '.'))} 
+                      />
+                  </div>
+
+                  <div className="bg-teal-50 dark:bg-teal-900/30 p-4 rounded-xl mb-4">
+                      <h4 className="font-bold text-teal-800 dark:text-teal-300 text-sm mb-1">Aanbevolen Gezond Gewicht</h4>
+                      <p className="text-xs text-teal-700 dark:text-teal-400 mb-3">
+                          Een gezond BMI (18.5 - 25) ligt voor u tussen de <strong>{calculateHealthyRange().min.toFixed(1)} kg</strong> en <strong>{calculateHealthyRange().max.toFixed(1)} kg</strong>.
+                      </p>
+                      <Button size="sm" className="w-full" onClick={setIdealAsGoal}>
+                          Gebruik {calculateHealthyRange().ideal.toFixed(1)} kg als doel
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
+
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors duration-300">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Maak een account</h2>
@@ -441,30 +580,87 @@ const RegisterView = ({ onRegister, onNavigateLogin }: { onRegister: (e: string,
               onChange={(e) => setFormData({...formData, email: e.target.value})}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Wachtwoord</label>
-            <input
-              type="password"
-              required
-              className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Wachtwoord</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300 pr-10"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bevestig Wachtwoord</label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300 pr-10"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
           </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+             <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Geslacht</label>
+                <select
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
+                  value={formData.gender}
+                  onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                >
+                    <option value="man">Man</option>
+                    <option value="vrouw">Vrouw</option>
+                    <option value="anders">Anders</option>
+                </select>
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Lengte (cm)</label>
+                <input
+                  type="number" required
+                  className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
+                  value={formData.height}
+                  onChange={(e) => setFormData({...formData, height: e.target.value})}
+                />
+             </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
              <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Start Gewicht</label>
                 <input
-                  type="number" step="0.1" min="0.1" required
+                  type="text" required
                   className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                   value={formData.startWeight}
                   onChange={(e) => setFormData({...formData, startWeight: e.target.value})}
                 />
              </div>
              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Doel Gewicht</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Doel Gewicht <button onClick={openBMIAdvisor} className="text-teal-600 text-xs hover:underline ml-1">(Adviseer mij)</button>
+                </label>
                 <input
-                  type="number" step="0.1" min="0.1" required
+                  type="text" required
                   className="rounded-lg w-full px-3 py-2 border border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                   value={formData.goalWeight}
                   onChange={(e) => setFormData({...formData, goalWeight: e.target.value})}
@@ -497,6 +693,7 @@ interface DashboardViewProps {
   handleStopChallengeClick: () => void;
   handleJoinChallenge: (c: Challenge) => void;
   isDark: boolean;
+  onUpdateProfile: (updates: Partial<UserProfile>) => void;
 }
 
 const DashboardView = ({
@@ -514,8 +711,25 @@ const DashboardView = ({
   activeChallenge,
   handleStopChallengeClick,
   handleJoinChallenge,
-  isDark
+  isDark,
+  onUpdateProfile
 }: DashboardViewProps) => {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [showWeightHistory, setShowWeightHistory] = useState(false);
+
+  useEffect(() => {
+      // Check if user has seen onboarding
+      if (currentUser && currentUser.profile.hasSeenOnboarding === false) {
+          setShowOnboarding(true);
+      }
+  }, [currentUser]);
+
+  const completeOnboarding = () => {
+      setShowOnboarding(false);
+      onUpdateProfile({ hasSeenOnboarding: true });
+  };
+
   const currentWeight = weightEntries.length > 0 
     ? weightEntries[weightEntries.length - 1].weight 
     : currentUser.profile.startWeight;
@@ -531,9 +745,115 @@ const DashboardView = ({
   };
   
   const progressPercentage = calculateProgress();
+
+  const calculateBMI = () => {
+      const h = currentUser.profile.height / 100;
+      return (currentWeight / (h*h)).toFixed(1);
+  };
+
+  const calculateHealthyWeight = () => {
+      const h = currentUser.profile.height / 100;
+      const ideal = 22 * h * h;
+      return ideal.toFixed(1);
+  }
+
+  // --- Real-time Challenge Logic ---
+  const getChallengeProgress = () => {
+      if (!activeChallenge) return null;
+      
+      const startDate = currentUser.profile.activeChallengeStartDate 
+          ? new Date(currentUser.profile.activeChallengeStartDate) 
+          : new Date(); // Fallback if old data
+      
+      const today = new Date();
+      // Calculate difference in days (start of day to start of day roughly)
+      const diffTime = Math.abs(today.getTime() - startDate.getTime());
+      const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Parse total duration from string like "30 dagen"
+      const totalDays = parseInt(activeChallenge.duration.split(' ')[0]) || 30;
+      
+      const progressPercent = Math.min(100, (daysPassed / totalDays) * 100);
+      
+      return { daysPassed, totalDays, progressPercent };
+  };
+
+  const challengeStats = getChallengeProgress();
+  
+  // Onboarding Steps Content
+  const ONBOARDING_STEPS = [
+      {
+          title: "Welkom op uw Dashboard",
+          content: "Dit is uw centrale plek voor gezondheid. We nemen u even kort mee langs de belangrijkste onderdelen.",
+          target: "center"
+      },
+      {
+          title: "Dagelijkse Check-in",
+          content: "Vul hier dagelijks in hoe u zich voelt. Dit helpt om patronen te herkennen in uw energie en stemming.",
+          target: "checkin"
+      },
+      {
+          title: "Gewicht & Doel",
+          content: (
+              <div>
+                  <p>Hier ziet u uw voortgang richting uw doel.</p>
+                  <div className="mt-2 p-2 bg-teal-50 dark:bg-teal-900/30 rounded border border-teal-200 dark:border-teal-700 text-sm">
+                      <strong>BMI Inzicht:</strong> Uw huidige BMI is {calculateBMI()}. 
+                      Op basis van uw lengte zou een statistisch ideaal gewicht rond de {calculateHealthyWeight()} kg liggen.
+                  </div>
+              </div>
+          ),
+          target: "progress"
+      },
+      {
+          title: "Challenges & Badges",
+          content: "Doe mee aan uitdagingen en verdien badges door consistent te zijn. Dit houdt de motivatie hoog!",
+          target: "challenges"
+      }
+  ];
+
+  const renderOnboardingOverlay = () => {
+      if (!showOnboarding) return null;
+      const step = ONBOARDING_STEPS[onboardingStep];
+
+      return (
+          <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 max-w-lg w-full rounded-2xl p-8 shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700 relative">
+                  <div className="flex justify-between items-center mb-4">
+                      <span className="text-xs font-bold text-teal-600 uppercase tracking-widest">
+                          Rondleiding {onboardingStep + 1}/{ONBOARDING_STEPS.length}
+                      </span>
+                      <button onClick={completeOnboarding} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{step.title}</h3>
+                  <div className="text-slate-600 dark:text-slate-300 mb-8 text-lg leading-relaxed">
+                      {step.content}
+                  </div>
+                  <div className="flex justify-between">
+                      <Button variant="ghost" onClick={completeOnboarding}>Overslaan</Button>
+                      <Button 
+                          onClick={() => {
+                              if (onboardingStep < ONBOARDING_STEPS.length - 1) {
+                                  setOnboardingStep(prev => prev + 1);
+                              } else {
+                                  completeOnboarding();
+                              }
+                          }}
+                      >
+                          {onboardingStep < ONBOARDING_STEPS.length - 1 ? "Volgende" : "Aan de slag!"}
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      );
+  };
   
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in relative">
+      {renderOnboardingOverlay()}
+
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
@@ -572,7 +892,7 @@ const DashboardView = ({
         <div className="lg:col-span-2 space-y-8">
            
            {/* Daily Input Card */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+           <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300 ${showOnboarding && onboardingStep === 1 ? 'ring-4 ring-teal-500 ring-opacity-50 z-20 relative' : ''}`}>
              <div className="flex items-center justify-between mb-6">
                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
                  <Activity className="w-5 h-5 mr-2 text-teal-600" />
@@ -612,8 +932,8 @@ const DashboardView = ({
                    <div className="flex space-x-4">
                       <div className="relative flex-grow max-w-xs">
                         <input 
-                          type="number" step="0.1"
-                          className="block w-full pl-10 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-950 dark:text-white rounded-lg focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
+                          type="text" 
+                          className="block w-full pl-10 pr-12 py-2.5 border border-slate-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white rounded-lg focus:ring-teal-500 focus:border-teal-500 transition-colors duration-300"
                           placeholder="0.0"
                           value={combinedWeight}
                           onChange={(e) => setCombinedWeight(e.target.value)}
@@ -632,11 +952,16 @@ const DashboardView = ({
            </div>
 
            {/* Progress Indicator */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
-                <Target className="w-5 h-5 mr-2 text-teal-600" />
-                Doelprogressie
-              </h3>
+           <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300 ${showOnboarding && onboardingStep === 2 ? 'ring-4 ring-teal-500 ring-opacity-50 z-20 relative' : ''}`}>
+              <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
+                    <Target className="w-5 h-5 mr-2 text-teal-600" />
+                    Doelprogressie
+                  </h3>
+                  <div className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-500">
+                      BMI: {calculateBMI()}
+                  </div>
+              </div>
               
               <div className="relative pt-1">
                 <div className="flex mb-2 items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
@@ -661,13 +986,72 @@ const DashboardView = ({
               </div>
            </div>
 
-           {/* Weight Chart */}
-           <WeightChart 
-              data={weightEntries} 
-              startWeight={currentUser.profile.startWeight}
-              goalWeight={currentUser.profile.goalWeight}
-              isDark={isDark}
-           />
+           {/* Weight Chart with Locked State */}
+           {weightEntries.length >= 7 ? (
+             <WeightChart 
+                data={weightEntries} 
+                startWeight={currentUser.profile.startWeight}
+                goalWeight={currentUser.profile.goalWeight}
+                isDark={isDark}
+             />
+           ) : (
+             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-8 text-center transition-colors duration-300">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                  <Lock className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Grafiek Vergrendeld</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-sm mx-auto">
+                  Om een accuraat beeld van uw progressie te geven, wordt de grafiek pas zichtbaar na 7 metingen.
+                </p>
+                
+                {/* Progress Bar for Unlock */}
+                <div className="max-w-xs mx-auto mb-6">
+                   <div className="flex justify-between text-xs text-slate-500 mb-1">
+                      <span>{weightEntries.length} metingen</span>
+                      <span>Doel: 7</span>
+                   </div>
+                   <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                      <div className="bg-teal-600 h-2 rounded-full transition-all duration-500" style={{ width: `${(weightEntries.length / 7) * 100}%` }}></div>
+                   </div>
+                   <p className="text-xs text-teal-600 mt-2 font-medium">Nog {7 - weightEntries.length} metingen te gaan!</p>
+                </div>
+
+                <Button variant="outline" size="sm" onClick={() => setShowWeightHistory(!showWeightHistory)}>
+                   {showWeightHistory ? 'Verberg meetgeschiedenis' : 'Toon meetgeschiedenis'}
+                </Button>
+             </div>
+           )}
+
+           {/* History List (Conditional) - Show button if chart is visible too */}
+           {weightEntries.length >= 7 && (
+              <div className="text-right">
+                 <button 
+                   onClick={() => setShowWeightHistory(!showWeightHistory)}
+                   className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center justify-end ml-auto"
+                 >
+                   <History className="w-4 h-4 mr-1" />
+                   {showWeightHistory ? 'Verberg meetgeschiedenis' : 'Bekijk meetgeschiedenis'}
+                 </button>
+              </div>
+           )}
+
+           {showWeightHistory && (
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden animate-fade-in transition-colors duration-300">
+                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+                    Recente Metingen
+                 </div>
+                 <div className="divide-y divide-slate-100 dark:divide-slate-700 max-h-60 overflow-y-auto">
+                    {[...weightEntries].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(entry => (
+                       <div key={entry.id} className="px-6 py-3 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                          <span className="text-slate-600 dark:text-slate-300 text-sm">
+                             {new Date(entry.date).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'long' })}
+                          </span>
+                          <span className="font-bold text-slate-900 dark:text-white">{entry.weight} kg</span>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           )}
         </div>
 
         {/* Right Column: Challenges & Badges */}
@@ -676,7 +1060,7 @@ const DashboardView = ({
            {/* Active Challenge Card */}
            <div className={`rounded-xl shadow-sm border p-6 relative overflow-hidden transition-colors duration-300 ${
               activeChallenge ? 'bg-white dark:bg-slate-800 border-teal-200 dark:border-teal-800' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 border-dashed'
-           }`}>
+           } ${showOnboarding && onboardingStep === 3 ? 'ring-4 ring-teal-500 ring-opacity-50 z-20 relative' : ''}`}>
               <div className="flex justify-between items-start mb-4 relative z-10">
                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
                     <Trophy className="w-5 h-5 mr-2 text-amber-500" />
@@ -687,14 +1071,14 @@ const DashboardView = ({
                  )}
               </div>
 
-              {activeChallenge ? (
+              {activeChallenge && challengeStats ? (
                  <div className="relative z-10">
                     <h4 className="text-xl font-bold text-teal-700 dark:text-teal-400 mb-2">{activeChallenge.title}</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">{activeChallenge.description}</p>
                     <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-1">
-                       <div className="bg-teal-600 h-2.5 rounded-full" style={{ width: '45%' }}></div>
+                       <div className="bg-teal-600 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${challengeStats.progressPercent}%` }}></div>
                     </div>
-                    <p className="text-xs text-slate-500 text-right">Dag 3 van {activeChallenge.duration.split(' ')[0]}</p>
+                    <p className="text-xs text-slate-500 text-right">Dag {challengeStats.daysPassed} van {challengeStats.totalDays}</p>
                  </div>
               ) : (
                  <div className="text-center py-6 relative z-10">
@@ -721,7 +1105,7 @@ const DashboardView = ({
            </div>
 
            {/* Badges */}
-           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+           <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300 ${showOnboarding && onboardingStep === 3 ? 'ring-4 ring-teal-500 ring-opacity-50 z-20 relative' : ''}`}>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center">
                  <Award className="w-5 h-5 mr-2 text-indigo-500" />
                  Behaalde Badges
@@ -761,6 +1145,215 @@ const DashboardView = ({
   );
 };
 
+const HomeView = ({ onNavigateLogin, onNavigateRegister }: { onNavigateLogin: () => void, onNavigateRegister: () => void }) => (
+  <div className="animate-fade-in">
+    {/* Hero Section */}
+    <div className="relative bg-white dark:bg-slate-900 overflow-hidden transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <div className="relative z-10 pb-8 bg-white dark:bg-slate-900 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 transition-colors duration-300">
+          <svg className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-white dark:text-slate-900 transform translate-x-1/2 transition-colors duration-300" fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <polygon points="50,0 100,0 50,100 0,100" />
+          </svg>
+          <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+            <div className="sm:text-center lg:text-left">
+              <h1 className="text-4xl tracking-tight font-extrabold text-slate-900 dark:text-white sm:text-5xl md:text-6xl">
+                <span className="block xl:inline">Fit en vitaal,</span>{' '}
+                <span className="block text-teal-600 xl:inline">door dik en dun</span>
+              </h1>
+              <p className="mt-3 text-base text-slate-500 dark:text-slate-400 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                Ondersteuning op maat voor mannen met prostaatkanker. Werk aan uw herstel, verbeter uw conditie en vind balans in voeding en leefstijl.
+              </p>
+              <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                <div className="rounded-md shadow">
+                  <Button onClick={onNavigateRegister} size="lg" className="w-full flex items-center justify-center md:py-4 md:text-lg md:px-10">
+                    Start Nu
+                  </Button>
+                </div>
+                <div className="mt-3 sm:mt-0 sm:ml-3">
+                  <Button onClick={onNavigateLogin} variant="outline" size="lg" className="w-full flex items-center justify-center md:py-4 md:text-lg md:px-10">
+                    Inloggen
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+      <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+        <img className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full" src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" alt="Man running" />
+      </div>
+    </div>
+    
+    {/* Features Section */}
+    <div className="py-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="lg:text-center">
+          <h2 className="text-base text-teal-600 font-semibold tracking-wide uppercase">Onze Aanpak</h2>
+          <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            Een complete leefstijlcoach in uw broekzak
+          </p>
+        </div>
+
+        <div className="mt-10">
+          <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+            {[
+              { title: 'Gepersonaliseerde Doelen', desc: 'Stel doelen die passen bij uw behandelfase.', icon: Target },
+              { title: 'Voeding & Beweging', desc: 'Houd uw voortgang bij en krijg slimme tips.', icon: Activity },
+              { title: 'KennisHub', desc: 'Betrouwbare artikelen geschreven door experts.', icon: BookOpen },
+              { title: 'Community Support', desc: 'Deel ervaringen en successen met lotgenoten.', icon: Users },
+            ].map((feature, idx) => (
+              <div key={idx} className="relative">
+                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-teal-500 text-white">
+                  <feature.icon className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <div className="ml-16">
+                  <h3 className="text-lg leading-6 font-medium text-slate-900 dark:text-white">{feature.title}</h3>
+                  <p className="mt-2 text-base text-slate-500 dark:text-slate-400">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const KnowledgeHubView = ({ onArticleClick }: { onArticleClick: (article: Article) => void }) => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+    <div className="text-center mb-12">
+      <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">KennisHub</h2>
+      <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+        Expert informatie over voeding, beweging en mentaal welzijn tijdens en na prostaatkanker.
+      </p>
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {ARTICLES.map(article => (
+        <ArticleCard 
+          key={article.id} 
+          article={article} 
+          onClick={onArticleClick} 
+        />
+      ))}
+    </div>
+  </div>
+);
+
+const ArticleDetailView = ({ article, onBack }: { article: Article | null, onBack: () => void }) => {
+  if (!article) return null;
+  
+  return (
+    <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+      <button 
+        onClick={onBack}
+        className="flex items-center text-slate-600 dark:text-slate-400 hover:text-teal-600 mb-8 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Terug naar overzicht
+      </button>
+      
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden transition-colors duration-300">
+        <div className="relative h-64 sm:h-96">
+          <img 
+            src={article.imageUrl} 
+            alt={article.title} 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+            <div className="p-8 text-white">
+              <span className="inline-block px-3 py-1 bg-teal-600 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
+                {article.category}
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2">{article.title}</h1>
+              <div className="flex items-center text-sm opacity-90">
+                <span className="mr-4">{new Date(article.date).toLocaleDateString('nl-NL')}</span>
+                <span>door {article.author}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-8 sm:p-12">
+          <p className="text-xl text-slate-600 dark:text-slate-300 font-medium mb-8 leading-relaxed">
+            {article.excerpt}
+          </p>
+          <div className="prose prose-slate dark:prose-invert max-w-none">
+            {article.content.split('\n\n').map((paragraph, idx) => (
+              <p key={idx} className="mb-4 text-slate-700 dark:text-slate-300 leading-7">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+const CommunityView = ({ posts, onReact }: { posts: CommunityPost[], onReact: (id: string, type: ReactionType) => void }) => (
+  <div className="max-w-3xl mx-auto px-4 py-8 animate-fade-in">
+     <div className="text-center mb-10">
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4 flex items-center justify-center">
+           <Users className="w-8 h-8 mr-3 text-teal-600" />
+           Het Trefpunt
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400">
+           Deel successen, motiveer elkaar en vier mijlpalen.
+        </p>
+     </div>
+
+     <div className="space-y-6">
+        {posts.map(post => (
+           <div key={post.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 transition-colors duration-300">
+              <div className="flex items-start mb-4">
+                 <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 mr-3">
+                    <UserIcon className="w-6 h-6" />
+                 </div>
+                 <div>
+                    <div className="flex items-baseline">
+                       <h4 className="font-bold text-slate-900 dark:text-white mr-2">{post.userPseudonym}</h4>
+                       <span className="text-xs text-slate-500">{new Date(post.timestamp).toLocaleString('nl-NL')}</span>
+                    </div>
+                    <div className="flex items-center mt-1">
+                       {post.actionType === 'challenge_join' && <Flag className="w-3 h-3 text-amber-500 mr-1" />}
+                       {post.actionType === 'streak_milestone' && <Flame className="w-3 h-3 text-orange-500 mr-1" />}
+                       {post.actionType === 'badge_earned' && <Award className="w-3 h-3 text-yellow-500 mr-1" />}
+                       {post.actionType === 'checkin_complete' && <CheckCircle className="w-3 h-3 text-teal-500 mr-1" />}
+                       <p className="text-slate-700 dark:text-slate-300 text-sm">{post.content}</p>
+                    </div>
+                 </div>
+              </div>
+              
+              <div className="flex items-center space-x-4 border-t border-slate-50 dark:border-slate-700 pt-3">
+                 <button 
+                   onClick={() => onReact(post.id, 'heart')}
+                   className={`flex items-center text-sm transition-colors ${post.currentUserReacted?.includes('heart') ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
+                 >
+                    <Heart className={`w-4 h-4 mr-1 ${post.currentUserReacted?.includes('heart') ? 'fill-current' : ''}`} />
+                    {post.reactions.heart}
+                 </button>
+                 <button 
+                   onClick={() => onReact(post.id, 'muscle')}
+                   className={`flex items-center text-sm transition-colors ${post.currentUserReacted?.includes('muscle') ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`}
+                 >
+                    <Activity className="w-4 h-4 mr-1" /> {/* Muscle icon replacement */}
+                    {post.reactions.muscle}
+                 </button>
+                 <button 
+                   onClick={() => onReact(post.id, 'clap')}
+                   className={`flex items-center text-sm transition-colors ${post.currentUserReacted?.includes('clap') ? 'text-blue-500' : 'text-slate-500 hover:text-blue-500'}`}
+                 >
+                    <Hand className="w-4 h-4 mr-1" /> {/* Clap/Hand icon */}
+                    {post.reactions.clap}
+                 </button>
+              </div>
+           </div>
+        ))}
+     </div>
+  </div>
+);
+
 // ---- Main App Component ----
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -788,6 +1381,10 @@ export default function App() {
   const [checkInValues, setCheckInValues] = useState<Record<string, number>>({
     energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5
   });
+
+  // State for Overwriting Weight
+  const [showOverwriteWeightModal, setShowOverwriteWeightModal] = useState(false);
+  const [pendingWeight, setPendingWeight] = useState<number | null>(null);
 
   // Gamification & Modals State
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
@@ -945,6 +1542,31 @@ export default function App() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  // ---- Gamification Logic ----
+  const awardPoints = async (amount: number, reason: string) => {
+    if (!currentUser) return;
+
+    const newPoints = (currentUser.profile.points || 0) + amount;
+    
+    // Determine Level
+    let newLevel = currentUser.profile.level;
+    const nextLevel = LEVELS.find(lvl => newPoints >= lvl.minPoints && newPoints < lvl.maxPoints);
+    if (nextLevel && nextLevel.name !== currentUser.profile.level) {
+        newLevel = nextLevel.name;
+        // Level Up Notification would go here
+        alert(`Gefeliciteerd! U heeft een nieuw niveau bereikt: ${newLevel}!`);
+    }
+
+    // Update in DB
+    const updatedUser = await db.updateUserProfile(currentUser.id, {
+        points: newPoints,
+        level: newLevel
+    });
+    
+    setCurrentUser(updatedUser);
+    showNotification(`+${amount} VitaPunten: ${reason}`);
+  };
+
   const handleLogin = async (email: string, password: string) => {
     try {
       const user = await db.loginUser(email, password);
@@ -956,10 +1578,10 @@ export default function App() {
     }
   };
 
-  const handleRegister = async (email: string, password: string, name: string, startWeight: number, goalWeight: number) => {
+  const handleRegister = async (email: string, password: string, name: string, startWeight: number, goalWeight: number, height: number, gender: 'man'|'vrouw'|'anders') => {
     // Validatie
-    if (isNaN(startWeight) || isNaN(goalWeight)) {
-      alert('Voer geldige getallen in voor het gewicht.');
+    if (isNaN(startWeight) || isNaN(goalWeight) || isNaN(height)) {
+      alert('Voer geldige getallen in.');
       return;
     }
 
@@ -979,8 +1601,12 @@ export default function App() {
         name,
         startWeight,
         goalWeight,
+        height,
+        gender,
         themePreference: 'light',
-        activeChallengeId: null
+        activeChallengeId: null,
+        points: 0,
+        level: 'Starter'
       });
       
       // Auto-add start weight to chart
@@ -1043,6 +1669,8 @@ export default function App() {
     setSelectedArticle(article);
     setCurrentView('article-detail');
     window.scrollTo(0, 0);
+    // Award points for reading (simplified: just clicking)
+    awardPoints(POINTS.READ_ARTICLE, 'Kennis opgedaan');
   };
 
   // Helper function to ask about sharing
@@ -1066,17 +1694,76 @@ export default function App() {
     }
   };
 
+  const confirmOverwriteWeight = () => {
+    if (!currentUser || pendingWeight === null) return;
+    
+    // Find existing entry for today
+    const today = new Date().toISOString().split('T')[0];
+    const existingEntry = weightEntries.find(entry => entry.date === today);
+    
+    if (existingEntry) {
+      db.deleteWeightEntry(currentUser.id, existingEntry.id);
+    }
+    
+    const newWeightEntry = db.addWeightEntry(currentUser.id, pendingWeight);
+    
+    // Update local state by removing old entry (if any) and adding new one
+    setWeightEntries(prev => {
+        const filtered = prev.filter(e => e.id !== existingEntry?.id);
+        return [...filtered, newWeightEntry];
+    });
+
+    setPendingWeight(null);
+    setShowOverwriteWeightModal(false);
+    setCombinedWeight('');
+    awardPoints(POINTS.LOG_WEIGHT, 'Gewicht bijgewerkt');
+  };
+
   const handleCombinedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
     // Safety Check for Rapid Weight Loss (Ethical Safeguard)
     if (combinedWeight) {
-        const newWeight = parseFloat(combinedWeight);
+        // Fix comma issue for European inputs
+        const newWeight = parseFloat(combinedWeight.replace(',', '.'));
         
         if (isNaN(newWeight)) {
             alert("Voer een geldig getal in voor het gewicht.");
             return;
+        }
+
+        // --- CHECK IF ENTRY EXISTS FOR TODAY ---
+        const today = new Date().toISOString().split('T')[0];
+        const existingEntry = weightEntries.find(entry => entry.date === today);
+
+        if (existingEntry) {
+            setPendingWeight(newWeight);
+            setShowOverwriteWeightModal(true);
+            // Save Check-in anyway, but stop weight save
+            db.addCheckIn(currentUser.id, {
+                energy: checkInValues.energy,
+                strength: checkInValues.strength,
+                hunger: checkInValues.hunger,
+                mood: checkInValues.mood,
+                stress: checkInValues.stress,
+                sleep: checkInValues.sleep
+            });
+            // Update Check-in state locally
+            const newCheckIn = {
+                id: crypto.randomUUID(),
+                date: today,
+                energy: checkInValues.energy,
+                strength: checkInValues.strength,
+                hunger: checkInValues.hunger,
+                mood: checkInValues.mood,
+                stress: checkInValues.stress,
+                sleep: checkInValues.sleep
+            };
+            setCheckInEntries(prev => [...prev, newCheckIn]);
+            setCheckInValues({ energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5 });
+            awardPoints(POINTS.LOG_CHECKIN, 'Dagelijkse Check-in');
+            return; 
         }
 
         // Clone before sorting to avoid state mutation
@@ -1085,14 +1772,13 @@ export default function App() {
 
         if (lastEntry) {
             const lastDate = new Date(lastEntry.date);
-            const today = new Date();
-            const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+            const todayDate = new Date();
+            const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             // Check if entry is within a week (approx 7 days)
             if (diffDays <= 7) {
                 const weightDifference = newWeight - lastEntry.weight; // Positive = gained, Negative = lost
-                const startWeight = currentUser.profile.startWeight;
                 const goalWeight = currentUser.profile.goalWeight;
                 const currentWeight = lastEntry.weight;
 
@@ -1135,12 +1821,15 @@ export default function App() {
       sleep: checkInValues.sleep
     });
 
+    awardPoints(POINTS.LOG_CHECKIN, 'Dagelijkse Check-in');
+
     // Save Weight (if entered) via DB Service
     if (combinedWeight) {
-      const parsedWeight = parseFloat(combinedWeight);
+      const parsedWeight = parseFloat(combinedWeight.replace(',', '.'));
       if (!isNaN(parsedWeight)) {
         const newWeightEntry = db.addWeightEntry(currentUser.id, parsedWeight);
         setWeightEntries(prev => [...prev, newWeightEntry]);
+        awardPoints(POINTS.LOG_WEIGHT, 'Gewicht gelogd');
       }
     }
 
@@ -1148,9 +1837,6 @@ export default function App() {
     setCombinedWeight('');
     // Reset sliders to middle
     setCheckInValues({ energy: 5, strength: 5, hunger: 5, mood: 5, stress: 5, sleep: 5 });
-    
-    // Gamification feedback
-    showNotification(`Meting opgeslagen! Goed bezig, ${currentUser.profile.name}. Uw streak loopt door!`);
     
     // Trigger sharing logic
     setTimeout(() => {
@@ -1173,7 +1859,7 @@ export default function App() {
     if (!currentUser) return;
     const newMeal = db.addMealEntry(currentUser.id, meal);
     setMealEntries(prev => [...prev, newMeal]);
-    showNotification('Maaltijd toegevoegd aan uw logboek.');
+    awardPoints(POINTS.LOG_MEAL, 'Maaltijd gelogd');
   };
 
   const handleDeleteMeal = (id: string) => {
@@ -1198,9 +1884,16 @@ export default function App() {
 
     try {
       setActiveAnimation(challenge.category);
-      const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: challenge.id });
+      // Save start date as ISO string
+      const startDate = new Date().toISOString();
+      const updatedUser = await db.updateUserProfile(currentUser.id, { 
+          activeChallengeId: challenge.id,
+          activeChallengeStartDate: startDate
+      });
       setCurrentUser(updatedUser);
       
+      awardPoints(POINTS.JOIN_CHALLENGE, 'Challenge gestart!');
+
       // Share logic
       setTimeout(() => {
           setActiveAnimation(null);
@@ -1228,7 +1921,10 @@ export default function App() {
     // Here we could log the reason to the DB if needed for analytics, 
     // for now we just proceed with clearing the challenge.
     
-    const updatedUser = await db.updateUserProfile(currentUser.id, { activeChallengeId: null });
+    const updatedUser = await db.updateUserProfile(currentUser.id, { 
+        activeChallengeId: null,
+        activeChallengeStartDate: null 
+    });
     setCurrentUser(updatedUser);
     setShowStopChallengeModal(false);
     showNotification("Challenge gestopt. Neem even rust en kies later een nieuwe.");
@@ -1348,6 +2044,8 @@ export default function App() {
                   // Like
                   newReactions[type] = newReactions[type] + 1;
                   newUserReacted.push(type);
+                  // Award a small point bonus for reacting
+                  awardPoints(POINTS.COMMUNITY_REACTION, 'Community steun');
               }
 
               return { ...post, reactions: newReactions, currentUserReacted: newUserReacted };
@@ -1360,85 +2058,76 @@ export default function App() {
 
   if (isLoading) return <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-300"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-teal-600"></div></div>;
 
-  const Navbar = () => (
+  const Navbar = () => {
+    // Determine level progress
+    let currentLevel = LEVELS.find(l => l.name === currentUser?.profile.level) || LEVELS[0];
+    let nextLevel = LEVELS[LEVELS.indexOf(currentLevel) + 1];
+    let progress = 0;
+    
+    if (currentUser && nextLevel) {
+       progress = Math.min(100, Math.max(0, ((currentUser.profile.points - currentLevel.minPoints) / (nextLevel.minPoints - currentLevel.minPoints)) * 100));
+    } else if (currentUser) {
+       progress = 100; // Max level
+    }
+
+    return (
     <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center cursor-pointer" onClick={() => navigateTo('home')}>
             <Heart className="h-8 w-8 text-teal-600 fill-teal-600" />
-            <span className="ml-2 text-xl font-bold text-slate-800 dark:text-white tracking-tight">Fit, door dik en dun</span>
+            <span className="ml-2 text-xl font-bold text-slate-800 dark:text-white tracking-tight hidden md:inline">Fit, door dik en dun</span>
+            <span className="ml-2 text-xl font-bold text-slate-800 dark:text-white tracking-tight md:hidden">ProstaVita</span>
           </div>
           
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <button 
-              onClick={() => navigateTo('home')}
-              className={`text-sm font-medium ${currentView === 'home' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-            >
-              Home
-            </button>
+          <div className="hidden md:flex items-center space-x-6">
+            <button onClick={() => navigateTo('home')} className={`text-sm font-medium ${currentView === 'home' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}>Home</button>
 
             {currentUser ? (
               <>
-                <button 
-                  onClick={() => navigateTo('knowledge')}
-                  className={`text-sm font-medium ${currentView === 'knowledge' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-                >
-                  KennisHub
-                </button>
-                 <button 
-                  onClick={() => navigateTo('food-analysis')}
-                  className={`text-sm font-medium flex items-center ${currentView === 'food-analysis' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-                >
-                  <Camera className="w-4 h-4 mr-1.5" />
-                  Voedingsscan
-                </button>
-                <button 
-                  onClick={() => navigateTo('dashboard')}
-                  className={`text-sm font-medium ${currentView === 'dashboard' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-                >
-                  Dashboard
-                </button>
-                <button 
-                  onClick={() => navigateTo('meal-logbook')}
-                  className={`text-sm font-medium flex items-center ${currentView === 'meal-logbook' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-                >
-                  <Utensils className="w-4 h-4 mr-1.5" />
-                  Eetdagboek
-                </button>
-                <button 
-                  onClick={() => navigateTo('community')}
-                  className={`text-sm font-medium ${currentView === 'community' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}
-                >
-                  Het Trefpunt
-                </button>
-                <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
-                <button 
-                  onClick={() => navigateTo('settings')}
-                  className="text-slate-600 dark:text-slate-300 hover:text-teal-600"
-                  title="Instellingen"
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-                <div className="flex items-center space-x-3">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{currentUser.profile.name}</span>
-                    <Button variant="ghost" size="sm" onClick={handleLogout}>
-                      <LogOut className="w-4 h-4" />
-                    </Button>
+                <button onClick={() => navigateTo('knowledge')} className={`text-sm font-medium ${currentView === 'knowledge' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}>KennisHub</button>
+                <button onClick={() => navigateTo('food-analysis')} className={`text-sm font-medium flex items-center ${currentView === 'food-analysis' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}><Camera className="w-4 h-4 mr-1.5" />Scan</button>
+                <button onClick={() => navigateTo('dashboard')} className={`text-sm font-medium ${currentView === 'dashboard' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}>Dashboard</button>
+                <button onClick={() => navigateTo('meal-logbook')} className={`text-sm font-medium flex items-center ${currentView === 'meal-logbook' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}><Utensils className="w-4 h-4 mr-1.5" />Logboek</button>
+                <button onClick={() => navigateTo('community')} className={`text-sm font-medium ${currentView === 'community' ? 'text-teal-600' : 'text-slate-600 dark:text-slate-300 hover:text-teal-600'}`}>Trefpunt</button>
+                
+                {/* Gamification Stats */}
+                <div className="flex flex-col items-end px-3 border-l border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center text-xs font-bold text-amber-500">
+                       <Star className="w-3 h-3 mr-1 fill-current" />
+                       <span>{currentUser.profile.points} ptn</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                       {currentUser.profile.level}
+                    </div>
+                    {/* Tiny Progress Bar */}
+                    <div className="w-16 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mt-0.5">
+                       <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                    <button onClick={() => navigateTo('settings')} className="text-slate-600 dark:text-slate-300 hover:text-teal-600"><Settings className="w-5 h-5" /></button>
+                    <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
                 </div>
               </>
             ) : (
               <div className="flex items-center space-x-4">
                 <button onClick={() => navigateTo('login')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-teal-600">Inloggen</button>
-                <Button variant="primary" size="sm" onClick={() => navigateTo('register')}>
-                  Start Nu
-                </Button>
+                <Button variant="primary" size="sm" onClick={() => navigateTo('register')}>Start Nu</Button>
               </div>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center md:hidden">
+            {currentUser && (
+                <div className="mr-4 flex flex-col items-end">
+                    <span className="text-xs font-bold text-amber-500">{currentUser.profile.points} ptn</span>
+                    <span className="text-[10px] text-slate-500">{currentUser.profile.level}</span>
+                </div>
+            )}
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-slate-600 dark:text-slate-300 p-2">
               {mobileMenuOpen ? <X /> : <Menu />}
             </button>
@@ -1472,245 +2161,21 @@ export default function App() {
         </div>
       )}
     </nav>
-  );
-
-  const HomeView = () => (
-    <div className="animate-fade-in">
-      {/* Hero Section */}
-      <div className="relative bg-teal-700 overflow-hidden">
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1552674605-46d52604746d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80" 
-            alt="Active lifestyle" 
-            className="w-full h-full object-cover opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-teal-900 to-teal-800/80 mix-blend-multiply" />
-        </div>
-        <div className="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-6">
-            Fit, door dik en dun
-          </h1>
-          <p className="mt-6 text-xl text-teal-100 max-w-3xl">
-            Samen werken aan een gezonde leefstijl, speciaal ontwikkeld voor en door mannen met prostaatkanker.
-            Omdat een goede conditie het fundament is voor uw behandeling en herstel.
-          </p>
-          <div className="mt-10 flex space-x-4">
-            {!currentUser ? (
-              <>
-                <Button size="lg" className="!bg-slate-900 !text-white !hover:bg-slate-800" onClick={() => navigateTo('register')}>
-                  Start uw reis
-                </Button>
-                <Button size="lg" className="!bg-slate-900 !text-white !hover:bg-slate-800" onClick={() => navigateTo('login')}>
-                  Inloggen
-                </Button>
-              </>
-            ) : (
-               <Button size="lg" variant="secondary" onClick={() => navigateTo('dashboard')}>
-                  Naar mijn Dashboard
-                </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="py-16 bg-white dark:bg-slate-900 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="text-center mb-12">
-             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Waarom meedoen?</h2>
-           </div>
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
-                 <div className="w-12 h-12 bg-teal-100 dark:bg-teal-900/30 rounded-lg flex items-center justify-center text-teal-600 mb-4">
-                   <Activity className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Fysieke Kracht</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Verbeter uw conditie voor een operatie of tijdens behandeling. Een sterker lichaam herstelt sneller.
-                 </p>
-              </div>
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
-                 <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center text-amber-600 mb-4">
-                   <Users className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Samen Sterk</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Deel ervaringen en successen (anoniem) met lotgenoten in Het Trefpunt. U staat er niet alleen voor.
-                 </p>
-              </div>
-              <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl transition-colors duration-300">
-                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center text-indigo-600 mb-4">
-                   <Brain className="w-6 h-6" />
-                 </div>
-                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Kennis & Inzicht</h3>
-                 <p className="text-slate-600 dark:text-slate-400">
-                   Direct toegang tot betrouwbare medische informatie en leefstijladviezen van experts.
-                 </p>
-              </div>
-           </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const KnowledgeHubView = () => (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">KennisHub</h2>
-        <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-          Betrouwbare informatie over voeding, beweging en herstel bij prostaatkanker.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {ARTICLES.map(article => (
-          <ArticleCard key={article.id} article={article} onClick={handleArticleClick} />
-        ))}
-      </div>
-
-      <div className="mt-16 bg-teal-50 dark:bg-teal-900/20 rounded-2xl p-8 transition-colors duration-300">
-        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center">
-          <HelpCircle className="w-6 h-6 mr-2 text-teal-600" />
-          Veelgestelde Vragen
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {FAQ_ITEMS.map(faq => (
-             <div key={faq.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 transition-colors duration-300">
-               <span className="text-xs font-bold text-teal-600 uppercase tracking-wide mb-2 block">{faq.category}</span>
-               <h4 className="font-bold text-slate-900 dark:text-white mb-2">{faq.question}</h4>
-               <p className="text-sm text-slate-600 dark:text-slate-400">{faq.answer}</p>
-             </div>
-           ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const ArticleDetailView = () => {
-    if (!selectedArticle) return null;
-    return (
-      <div className="bg-white dark:bg-slate-900 min-h-screen animate-fade-in transition-colors duration-300">
-        <div className="relative h-96">
-           <img src={selectedArticle.imageUrl} alt={selectedArticle.title} className="w-full h-full object-cover" />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
-           <div className="absolute bottom-0 left-0 right-0 p-8 max-w-7xl mx-auto">
-              <button 
-                onClick={() => navigateTo('knowledge')}
-                className="text-white/80 hover:text-white flex items-center mb-4 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5 rotate-180 mr-1" /> Terug naar overzicht
-              </button>
-              <span className="px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full uppercase tracking-wider mb-4 inline-block">
-                {selectedArticle.category}
-              </span>
-              <h1 className="text-4xl font-bold text-white mb-2">{selectedArticle.title}</h1>
-              <div className="flex items-center text-white/80 space-x-6">
-                 <span className="flex items-center"><Calendar className="w-4 h-4 mr-2" /> {new Date(selectedArticle.date).toLocaleDateString('nl-NL')}</span>
-                 <span className="flex items-center"><UserIcon className="w-4 h-4 mr-2" /> {selectedArticle.author}</span>
-              </div>
-           </div>
-        </div>
-        <div className="max-w-4xl mx-auto px-6 py-12">
-           <div className="prose prose-lg dark:prose-invert max-w-none text-slate-700 dark:text-slate-300">
-              <p className="lead text-xl text-slate-600 dark:text-slate-300 mb-8 font-medium">
-                {selectedArticle.excerpt}
-              </p>
-              <div className="whitespace-pre-line">
-                {selectedArticle.content}
-              </div>
-           </div>
-        </div>
-      </div>
     );
   };
 
-  const CommunityView = () => {
-      return (
-          <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 animate-fade-in transition-colors duration-300">
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="mb-8 text-center">
-                      <div className="inline-flex items-center justify-center p-3 bg-teal-100 dark:bg-teal-900/30 rounded-full text-teal-600 dark:text-teal-400 mb-4">
-                          <Users className="w-8 h-8" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Het Trefpunt</h2>
-                      <p className="text-slate-600 dark:text-slate-400">
-                          Een veilige plek om elkaar aan te moedigen. Deel uw successen (anoniem) en steun anderen.
-                      </p>
-                  </div>
-
-                  <div className="space-y-6">
-                      {communityPosts.map(post => {
-                          const getIcon = () => {
-                              switch(post.actionType) {
-                                  case 'badge_earned': return <Award className="w-5 h-5 text-amber-500" />;
-                                  case 'challenge_join': return <Flag className="w-5 h-5 text-blue-500" />;
-                                  case 'streak_milestone': return <Flame className="w-5 h-5 text-orange-500" />;
-                                  case 'checkin_complete': return <CheckCircle className="w-5 h-5 text-green-500" />;
-                                  default: return <Activity className="w-5 h-5" />;
-                              }
-                          };
-
-                          return (
-                              <div key={post.id} className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in transition-colors duration-300">
-                                  <div className="flex items-start mb-4">
-                                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full mr-4 transition-colors duration-300">
-                                          {getIcon()}
-                                      </div>
-                                      <div>
-                                          <div className="flex items-baseline space-x-2">
-                                              <span className="font-bold text-slate-900 dark:text-white">{post.userPseudonym}</span>
-                                              <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                  {new Date(post.timestamp).toLocaleTimeString('nl-NL', {hour: '2-digit', minute:'2-digit'})}
-                                              </span>
-                                          </div>
-                                          <p className="text-slate-700 dark:text-slate-300 mt-1">{post.content}</p>
-                                      </div>
-                                  </div>
-                                  
-                                  <div className="flex items-center space-x-4 border-t border-slate-100 dark:border-slate-800 pt-4 transition-colors duration-300">
-                                      <button 
-                                          onClick={() => handleReaction(post.id, 'heart')}
-                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('heart') ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
-                                      >
-                                          <Heart className={`w-4 h-4 ${post.currentUserReacted?.includes('heart') ? 'fill-current' : ''}`} />
-                                          <span>{post.reactions.heart}</span>
-                                      </button>
-                                      <button 
-                                          onClick={() => handleReaction(post.id, 'muscle')}
-                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('muscle') ? 'text-amber-600' : 'text-slate-500 hover:text-amber-600'}`}
-                                      >
-                                          <Hand className="w-4 h-4" /> 
-                                          <span>{post.reactions.muscle}</span>
-                                      </button>
-                                      <button 
-                                          onClick={() => handleReaction(post.id, 'clap')}
-                                          className={`flex items-center space-x-1 text-sm font-medium transition-colors ${post.currentUserReacted?.includes('clap') ? 'text-blue-500' : 'text-slate-500 hover:text-blue-500'}`}
-                                      >
-                                          <Share2 className="w-4 h-4" /> {/* Using Share/Clap metaphor */}
-                                          <span>{post.reactions.clap}</span>
-                                      </button>
-                                  </div>
-                              </div>
-                          );
-                      })}
-                  </div>
-                  
-                  <div className="mt-8 text-center">
-                      <p className="text-xs text-slate-400 max-w-md mx-auto">
-                          * Om de veiligheid te waarborgen, zijn er geen openbare chatfuncties. Alle berichten worden automatisch gegenereerd op basis van behaalde doelen.
-                      </p>
-                  </div>
-              </div>
-          </div>
-      );
-  };
-  
   const FoodAnalysisView = ({ onAddMeal, onNavigateLogbook }: { onAddMeal: (m: { name: string; description: string; calories: number }) => void, onNavigateLogbook: () => void }) => {
     const [scanMode, setScanMode] = useState<'meal' | 'product'>('meal');
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    
+    // New States for Enhanced Flow
+    const [mealType, setMealType] = useState<'ontbijt' | 'lunch' | 'avondeten' | 'snack'>('avondeten');
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTotalCalories, setEditedTotalCalories] = useState<number>(0);
+    const [editedItems, setEditedItems] = useState<FoodItem[]>([]);
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
@@ -1720,6 +2185,7 @@ export default function App() {
       setResult(null);
       setAnalyzing(true);
       setShowSuccess(false);
+      setIsEditing(false);
 
       // Create local preview
       const reader = new FileReader();
@@ -1729,7 +2195,6 @@ export default function App() {
       reader.readAsDataURL(file);
 
       try {
-        // Convert to Base64 for API
         const base64Data = await new Promise<string>((resolve, reject) => {
           const r = new FileReader();
           r.readAsDataURL(file);
@@ -1741,8 +2206,27 @@ export default function App() {
         
         let promptText = "";
         
+        // IMPROVED PROMPT LOGIC (Chain-of-Thought)
         if (scanMode === 'meal') {
-           promptText = "Analyseer deze foto van voedsel. Identificeer elk item op het bord. Schat de calorieën voor elk item op basis van de zichtbare portiegrootte. Geef het antwoord in het volgende JSON-formaat (zonder markdown code blocks): { items: [{ name: string, calories: number, portion: string }], totalCalories: number, healthTip: string }. Zorg dat alles in het Nederlands is.";
+           promptText = `
+           Rol: Je bent een expert voedingsdeskundige.
+           Context: De gebruiker eet dit als ${mealType}.
+           Taak: Analyseer de afbeelding van het voedsel stap voor stap.
+           1. Identificeer elk individueel ingrediënt of component op het bord.
+           2. Schat voor elk component het gewicht in grammen in, gebaseerd op visuele grootte (gebruik standaard portiegroottes als referentie).
+           3. Bereken op basis van dat geschatte gewicht de calorieën.
+           4. Tel alles bij elkaar op.
+           
+           Output Format (JSON Only, no markdown):
+           { 
+             "items": [
+               { "name": "Naam van item", "estimatedWeightGrams": 150, "calories": 200, "portion": "Beschrijving (bv. 1 stuk, handjevol)" }
+             ], 
+             "totalCalories": 500, 
+             "healthTip": "Een korte tip over de balans van deze maaltijd." 
+           }
+           Zorg dat alles in het Nederlands is.
+           `;
         } else {
            promptText = "Analyseer de achterkant van dit product (voedingslabel of ingrediëntenlijst). Analyseer of dit product past in een gezonde leefstijl, specifiek voor iemand die op zijn gezondheid let. Geef het antwoord in het volgende JSON-formaat (zonder markdown code blocks): { productName: string, healthScore: number (1-10), summary: string, pros: string[], cons: string[] }. healthScore 10 is super gezond, 1 is ongezond. Zorg dat alles in het Nederlands is.";
         }
@@ -1751,23 +2235,21 @@ export default function App() {
           model: 'gemini-3-pro-preview',
           contents: {
             parts: [
-              {
-                inlineData: {
-                  mimeType: file.type,
-                  data: base64Data
-                }
-              },
-              {
-                text: promptText
-              }
+              { inlineData: { mimeType: file.type, data: base64Data } },
+              { text: promptText }
             ]
           },
-          config: {
-            responseMimeType: 'application/json'
-          }
+          config: { responseMimeType: 'application/json' }
         });
         
-        const jsonText = response.text;
+        let jsonText = response.text || "{}";
+        jsonText = jsonText.replace(/```json\n?|\n?```/g, '').trim();
+        const firstBrace = jsonText.indexOf('{');
+        const lastBrace = jsonText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+        }
+
         const analysisData = JSON.parse(jsonText);
         
         // Add type discriminator
@@ -1775,22 +2257,31 @@ export default function App() {
           ? { type: 'meal', ...analysisData } 
           : { type: 'product', ...analysisData };
 
-        // Simuleer een kleine vertraging als de API te snel is, voor het effect van de laadbalk
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
         setAnalyzing(false);
-        setShowSuccess(true);
         
-        setTimeout(() => {
-          setShowSuccess(false);
-          setResult(finalResult);
-        }, 2000);
+        // If meal, go to Edit Mode first
+        if (scanMode === 'meal' && finalResult.type === 'meal') {
+            setEditedTotalCalories(finalResult.totalCalories);
+            setEditedItems(finalResult.items);
+            setIsEditing(true);
+            setResult(finalResult);
+        } else {
+            // Product scan goes straight to success
+            setShowSuccess(true);
+            setTimeout(() => { setShowSuccess(false); setResult(finalResult); }, 2000);
+        }
 
       } catch (error) {
         console.error("Analysis failed:", error);
         setAnalyzing(false);
         alert("Er ging iets mis bij het analyseren van de foto. Probeer het opnieuw.");
       }
+    };
+
+    const handleConfirmMeal = () => {
+        setIsEditing(false);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
     };
 
     return (
@@ -1807,14 +2298,14 @@ export default function App() {
            <div className="flex justify-center mb-8">
              <div className="bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex transition-colors duration-300">
                <button 
-                 onClick={() => { setScanMode('meal'); setResult(null); }}
+                 onClick={() => { setScanMode('meal'); setResult(null); setIsEditing(false); }}
                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center ${scanMode === 'meal' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                >
                  <Utensils className="w-4 h-4 mr-2" />
                  Maaltijd op Bord
                </button>
                <button 
-                 onClick={() => { setScanMode('product'); setResult(null); }}
+                 onClick={() => { setScanMode('product'); setResult(null); setIsEditing(false); }}
                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center ${scanMode === 'product' ? 'bg-teal-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                >
                  <ScanBarcode className="w-4 h-4 mr-2" />
@@ -1826,8 +2317,34 @@ export default function App() {
            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors duration-300">
               
               {/* Upload Area / Camera View */}
-              {!result && !analyzing && !showSuccess && (
+              {!result && !analyzing && !showSuccess && !isEditing && (
                 <div className="p-8">
+                  {/* Meal Type Context */}
+                  {scanMode === 'meal' && (
+                      <div className="mb-6">
+                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-center">Wat voor maaltijd is dit?</label>
+                          <div className="flex justify-center space-x-2">
+                              {['ontbijt', 'lunch', 'avondeten', 'snack'].map((type) => (
+                                  <button
+                                      key={type}
+                                      onClick={() => setMealType(type as any)}
+                                      className={`px-3 py-1.5 rounded-full text-xs font-medium capitalize border ${
+                                          mealType === type 
+                                          ? 'bg-teal-100 border-teal-500 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300' 
+                                          : 'border-slate-200 dark:border-slate-700 text-slate-500'
+                                      }`}
+                                  >
+                                      {type}
+                                  </button>
+                              ))}
+                          </div>
+                          <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-xs text-blue-800 dark:text-blue-200 flex items-center justify-center">
+                              <Info className="w-4 h-4 mr-2" />
+                              Tip: Leg bestek of uw hand naast het bord voor een betere schatting van de grootte.
+                          </div>
+                      </div>
+                  )}
+
                   <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-12 flex flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors relative cursor-pointer group">
                     <input 
                       type="file" 
@@ -1859,7 +2376,6 @@ export default function App() {
                   )}
                   <h3 className="text-xl font-medium text-slate-800 dark:text-white mb-6 animate-pulse">Foto analyseren...</h3>
                   
-                  {/* Custom Progress Bar */}
                   <div className="w-full max-w-md h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative">
                     <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-teal-400 to-teal-600 w-1/2 animate-[progress_1.5s_ease-in-out_infinite]"></div>
                   </div>
@@ -1870,6 +2386,53 @@ export default function App() {
                     }
                   `}</style>
                 </div>
+              )}
+
+              {/* Edit Mode (Validation Screen) */}
+              {isEditing && result?.type === 'meal' && (
+                  <div className="p-6 animate-fade-in">
+                      <div className="flex items-center justify-between mb-6">
+                          <h3 className="text-xl font-bold text-slate-900 dark:text-white">Controleer Resultaat</h3>
+                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">Bewerk indien nodig</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-4 mb-6">
+                          <img src={previewUrl || ''} className="w-24 h-24 object-cover rounded-lg shadow-sm" />
+                          <div>
+                              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Totaal geschat:</p>
+                              <div className="flex items-center">
+                                  <input 
+                                      type="number" 
+                                      className="w-24 border border-slate-300 dark:border-slate-600 rounded p-1 text-xl font-bold text-slate-900 dark:text-white bg-transparent"
+                                      value={editedTotalCalories}
+                                      onChange={(e) => setEditedTotalCalories(parseInt(e.target.value) || 0)}
+                                  />
+                                  <span className="ml-2 font-bold text-slate-700 dark:text-slate-300">kcal</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="space-y-3 mb-6">
+                          {editedItems.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700">
+                                  <div>
+                                      <p className="font-medium text-slate-900 dark:text-white text-sm">{item.name}</p>
+                                      <p className="text-xs text-slate-500">{item.estimatedWeightGrams ? `~${item.estimatedWeightGrams} gram` : item.portion}</p>
+                                  </div>
+                                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.calories} kcal</span>
+                              </div>
+                          ))}
+                      </div>
+
+                      <div className="text-xs text-slate-400 mb-6 text-center italic">
+                          Disclaimer: AI-schattingen kunnen afwijken. Gebruik uw eigen oordeel.
+                      </div>
+
+                      <div className="flex space-x-3">
+                          <Button variant="outline" className="w-full" onClick={() => { setIsEditing(false); setResult(null); }}>Annuleren</Button>
+                          <Button className="w-full" onClick={handleConfirmMeal}>Opslaan & Doorgaan</Button>
+                      </div>
+                  </div>
               )}
 
               {/* Success Animation */}
@@ -1885,15 +2448,15 @@ export default function App() {
                 </div>
               )}
 
-              {/* Meal Results */}
-              {result && result.type === 'meal' && (
+              {/* Meal Results (Final View) */}
+              {result && result.type === 'meal' && !isEditing && (
                 <div className="animate-fade-in">
                   <div className="relative h-48 bg-slate-100">
                     <img src={previewUrl || ''} alt="Meal" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent flex items-end p-6">
                       <div className="text-white">
-                        <p className="text-sm font-medium opacity-80">Totaal geschat</p>
-                        <p className="text-4xl font-bold">{result.totalCalories} kcal</p>
+                        <p className="text-sm font-medium opacity-80">Totaal</p>
+                        <p className="text-4xl font-bold">{editedTotalCalories} kcal</p>
                       </div>
                     </div>
                   </div>
@@ -1905,19 +2468,15 @@ export default function App() {
                     </div>
 
                     <div className="space-y-4 mb-8">
-                      {result.items.map((item, idx) => (
+                      {editedItems.map((item, idx) => (
                         <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 transition-colors duration-300">
                           <div>
                             <p className="font-medium text-slate-900 dark:text-white">{item.name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.portion}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.estimatedWeightGrams ? `~${item.estimatedWeightGrams}g` : item.portion}</p>
                           </div>
                           <span className="font-semibold text-slate-700 dark:text-slate-200">{item.calories} kcal</span>
                         </div>
                       ))}
-                      <div className="flex justify-between items-center p-3 border-t-2 border-slate-100 dark:border-slate-700 mt-2">
-                        <span className="font-bold text-slate-900 dark:text-white">Totaal</span>
-                        <span className="font-bold text-teal-600 text-lg">{result.totalCalories} kcal</span>
-                      </div>
                     </div>
 
                     <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800/50 flex items-start transition-colors duration-300">
@@ -1936,23 +2495,23 @@ export default function App() {
                     <Button 
                       onClick={() => {
                         onAddMeal({
-                          name: "Gescande Maaltijd", 
-                          description: `Bevat: ${result.items.map(i => i.name).join(', ')}.`,
-                          calories: result.totalCalories
+                          name: `Gescande Maaltijd (${mealType})`, 
+                          description: `Bevat: ${editedItems.map(i => i.name).join(', ')}.`,
+                          calories: editedTotalCalories
                         });
                         onNavigateLogbook();
                       }}
                       className="w-full mt-4 flex items-center justify-center"
                     >
                       <PlusCircle className="w-4 h-4 mr-2" />
-                      Toevoegen aan Eetdagboek
+                      Toevoegen aan Eetdagboek (+5 ptn)
                     </Button>
                   </div>
                 </div>
               )}
 
               {/* Product Results */}
-              {result && result.type === 'product' && (
+              {result && result.type === 'product' && !isEditing && (
                 <div className="animate-fade-in">
                   <div className="relative h-48 bg-slate-100 overflow-hidden">
                     <img src={previewUrl || ''} alt="Product" className="w-full h-full object-cover blur-sm scale-110" />
@@ -2005,9 +2564,9 @@ export default function App() {
               )}
               
               {/* Reset Button (Common) */}
-              {result && (
+              {result && !isEditing && (
                 <div className="px-6 pb-8">
-                  <Button onClick={() => setResult(null)} variant="outline" className="w-full">
+                  <Button onClick={() => { setResult(null); setIsEditing(false); }} variant="outline" className="w-full">
                     Nieuwe scan maken
                   </Button>
                 </div>
@@ -2171,10 +2730,10 @@ export default function App() {
             </div>
          </div>
          <div className="border-t border-slate-100 dark:border-slate-800 mt-12 pt-8 flex justify-between items-center flex-col md:flex-row">
-            <p className="text-xs text-slate-400">© 2024 Fit, door dik en dun. Alle rechten voorbehouden.</p>
-            <p className="text-xs text-slate-400 mt-2 md:mt-0">
-              Disclaimer: Deze app vervangt geen medisch advies.
-            </p>
+            <div className="mt-4 text-xs text-slate-400 max-w-4xl order-2 md:order-1">
+              <p className="mb-1">* Dit programma wordt doorontwikkeld voor een bredere doelgroep. De verwachting is dat het beschikbaar komt voor iedereen: van gezonde mensen die ziekte willen voorkomen tot mensen die specifieke leefstijladviezen zoeken passend bij hun aandoening.</p>
+              <p>Disclaimer: Deze app vervangt geen medisch advies. © 2024 Fit, door dik en dun. Alle rechten voorbehouden.</p>
+            </div>
          </div>
       </div>
     </footer>
@@ -2182,6 +2741,15 @@ export default function App() {
 
   return (
     <div className={`flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
+      
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[200] bg-slate-900 text-white px-6 py-3 rounded-lg shadow-xl flex items-center animate-fade-in-up border border-slate-700">
+          <CheckCircle className="w-5 h-5 mr-2 text-green-400" />
+          <span className="text-sm font-medium">{notification}</span>
+        </div>
+      )}
+
       {/* Success Overlay Animation */}
       {activeAnimation && (
         <div className="fixed inset-0 z-[100] bg-white/95 dark:bg-slate-950/95 flex items-center justify-center animate-fade-in">
@@ -2219,6 +2787,28 @@ export default function App() {
                Reset Link
              </Button>
           </div>
+        </div>
+      )}
+
+      {/* Overwrite Weight Modal */}
+      {showOverwriteWeightModal && (
+        <div className="fixed inset-0 z-[150] bg-black/50 flex items-center justify-center p-4">
+           <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-700">
+             <div className="flex justify-between items-center mb-4">
+               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+                 <AlertCircle className="w-5 h-5 mr-2 text-orange-500" />
+                 Meting Overschrijven
+               </h3>
+               <button onClick={() => { setShowOverwriteWeightModal(false); setPendingWeight(null); }} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+             </div>
+             <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+               U heeft vandaag al een gewichtsmeting ingevoerd. Wilt u de vorige meting overschrijven met <strong>{pendingWeight} kg</strong>?
+             </p>
+             <div className="flex justify-end space-x-2">
+                <Button variant="ghost" onClick={() => { setShowOverwriteWeightModal(false); setPendingWeight(null); }}>Annuleren</Button>
+                <Button variant="primary" onClick={confirmOverwriteWeight}>Ja, overschrijven</Button>
+             </div>
+           </div>
         </div>
       )}
 
@@ -2329,7 +2919,7 @@ export default function App() {
       {currentUser && (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
           {isChatOpen && (
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl mb-4 w-80 sm:w-96 h-[500px] flex flex-col border border-slate-200 dark:border-slate-800 animate-fade-in overflow-hidden transition-colors duration-300">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl mb-4 w-80 sm:w-96 h-[500px] max-h-[80vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-fade-in overflow-hidden transition-colors duration-300">
               {/* Chat Header */}
               <div className="bg-teal-600 p-4 flex justify-between items-center text-white">
                 <div className="flex items-center">
@@ -2417,49 +3007,10 @@ export default function App() {
 
       <Navbar />
       <main className="flex-grow">
-        {currentView === 'home' && <HomeView />}
+        {currentView === 'home' && <HomeView onNavigateLogin={() => navigateTo('login')} onNavigateRegister={() => navigateTo('register')} />}
         {currentView === 'login' && <LoginView onLogin={handleLogin} onNavigateRegister={() => navigateTo('register')} onNavigateForgot={() => navigateTo('forgot-password')} />}
         {currentView === 'forgot-password' && <ForgotPasswordView onBack={() => navigateTo('login')} onSubmit={handleForgotPassword} />}
         {currentView === 'reset-password' && <ResetPasswordView onReset={handleResetPassword} />}
         {currentView === 'register' && <RegisterView onRegister={handleRegister} onNavigateLogin={() => navigateTo('login')} />}
-        {currentView === 'knowledge' && <KnowledgeHubView />}
-        {currentView === 'article-detail' && <ArticleDetailView />}
-        {currentView === 'dashboard' && currentUser && (
-          <DashboardView 
-            currentUser={currentUser}
-            weightEntries={weightEntries}
-            checkInEntries={checkInEntries}
-            combinedWeight={combinedWeight}
-            setCombinedWeight={setCombinedWeight}
-            checkInValues={checkInValues}
-            setCheckInValues={setCheckInValues}
-            handleCombinedSubmit={handleCombinedSubmit}
-            handleOpenFreezeModal={handleOpenFreezeModal}
-            freeFreezeActive={freeFreezeActive}
-            medicalFreezeActive={medicalFreezeActive}
-            activeChallenge={activeChallenge}
-            handleStopChallengeClick={handleStopChallengeClick}
-            handleJoinChallenge={handleJoinChallenge}
-            isDark={isDark}
-          />
-        )}
-        {currentView === 'settings' && <SettingsView />}
-        {currentView === 'food-analysis' && (
-          <FoodAnalysisView 
-            onAddMeal={handleAddMeal} 
-            onNavigateLogbook={() => navigateTo('meal-logbook')} 
-          />
-        )}
-        {currentView === 'community' && <CommunityView />}
-        {currentView === 'meal-logbook' && currentUser && (
-          <MealLogbook 
-            entries={mealEntries} 
-            onAdd={handleAddMeal}
-            onDelete={handleDeleteMeal}
-          />
-        )}
-      </main>
-      <Footer />
-    </div>
-  );
-}
+        {currentView === 'knowledge' && <KnowledgeHubView onArticleClick={handleArticleClick} />}
+        {currentView === 'article-detail' && <ArticleDetailView article={selected

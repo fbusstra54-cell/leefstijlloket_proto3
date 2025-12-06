@@ -2,6 +2,24 @@
 import { Article, FAQItem, Badge, Challenge, CommunityPost } from './types';
 import { Activity, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
 
+// --- Gamification Constants ---
+export const POINTS = {
+  LOG_WEIGHT: 10,
+  LOG_CHECKIN: 15,
+  LOG_MEAL: 5,
+  JOIN_CHALLENGE: 50,
+  COMPLETE_CHALLENGE: 250,
+  READ_ARTICLE: 20,
+  COMMUNITY_REACTION: 2
+};
+
+export const LEVELS = [
+  { name: 'Starter', minPoints: 0, maxPoints: 500 },
+  { name: 'Doorzetter', minPoints: 500, maxPoints: 1500 },
+  { name: 'Krachtpatser', minPoints: 1500, maxPoints: 3000 },
+  { name: 'VitaMeester', minPoints: 3000, maxPoints: Infinity }
+];
+
 export const ARTICLES: Article[] = [
   {
     id: '5',
@@ -152,7 +170,7 @@ export const CHECKIN_QUESTIONS = [
   { id: 'strength', label: 'Hoe sterk voel ik mij?', minLabel: 'Geen kracht', maxLabel: 'Veel kracht' },
   { id: 'hunger', label: 'Hoe gaat het met mijn hongergevoel?', minLabel: 'Veel honger', maxLabel: 'Geen honger' },
   { id: 'mood', label: 'Hoe gaat het met mijn gemoedstoestand?', minLabel: 'Niet goed', maxLabel: 'Heel goed' },
-  { id: 'stress', label: 'Hoeveel stress ervaar ik nu?', minLabel: 'Veel stress', maxLabel: 'Geen stress' },
+  { id: 'stress', label: 'Hoeveel stress ervaar ik nu?', minLabel: 'Weinig stress', maxLabel: 'Veel stress' },
   { id: 'sleep', label: 'Hoe goed is mijn kwaliteit van slaap?', minLabel: 'Haast geen slaap', maxLabel: 'Heel goede slaap' },
 ];
 
