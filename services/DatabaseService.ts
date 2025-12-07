@@ -26,6 +26,92 @@ interface ResetToken {
 }
 
 class DatabaseService {
+  constructor() {
+    this.seedMockDataIfEmpty();
+  }
+
+  // --- Mock Data Seeding ---
+  private async seedMockDataIfEmpty() {
+    const users = this.getUsers();
+    if (users.length === 0) {
+      console.log("Seeding database with mock user...");
+      
+      const mockUserId = crypto.randomUUID();
+      const passwordHash = await hashPassword('password123');
+      
+      const mockUser: User = {
+        id: mockUserId,
+        email: 'jan@voorbeeld.nl',
+        passwordHash: passwordHash,
+        profile: {
+          name: 'Jan de Vries',
+          startWeight: 85,
+          goalWeight: 78,
+          height: 182,
+          gender: 'man',
+          points: 2450,
+          level: 'Krachtpatser',
+          earnedBadges: ['b1', 'b2'], // Mock badges
+          hasSeenOnboarding: true,
+          activeChallengeId: 'c2'
+        }
+      };
+
+      // Generate 40 weeks of weight data (85kg -> 80kg)
+      const weightEntries: WeightEntry[] = [];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - (40 * 7)); // 40 weeks ago
+
+      for (let i = 0; i <= 40; i++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + (i * 7));
+        
+        // Linear progression from 85 to 80 with some random fluctuation
+        const progress = i / 40;
+        const targetW = 85 - (5 * progress); 
+        const fluctuation = (Math.random() - 0.5) * 0.8;
+        
+        weightEntries.push({
+          id: crypto.randomUUID(),
+          date: date.toISOString().split('T')[0],
+          weight: parseFloat((targetW + fluctuation).toFixed(1))
+        });
+      }
+
+      // Generate some recent check-ins
+      const checkIns: DailyCheckIn[] = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        checkIns.push({
+          id: crypto.randomUUID(),
+          date: date.toISOString().split('T')[0],
+          energy: 6 + Math.floor(Math.random() * 3),
+          mood: 6 + Math.floor(Math.random() * 3),
+          sleep: 6 + Math.floor(Math.random() * 3),
+          stress: 4 + Math.floor(Math.random() * 3),
+          hunger: 5,
+          strength: 6,
+          steps: 6000 + Math.floor(Math.random() * 4000)
+        });
+      }
+
+      // Save Mock Data
+      this.saveUsers([mockUser]);
+      
+      const allWeights = {};
+      allWeights[mockUserId] = weightEntries;
+      localStorage.setItem(DB_KEYS.DATA_WEIGHTS, JSON.stringify(allWeights));
+
+      const allCheckins = {};
+      allCheckins[mockUserId] = checkIns;
+      localStorage.setItem(DB_KEYS.DATA_CHECKINS, JSON.stringify(allCheckins));
+
+      // Auto Login
+      this.setSession(mockUser);
+    }
+  }
+
   // --- Auth & User Management ---
 
   async registerUser(email: string, password: string, profile: UserProfile): Promise<User> {
@@ -44,7 +130,8 @@ class DatabaseService {
         activeChallengeId: profile.activeChallengeId || null,
         hasSeenOnboarding: false, // Default to false for new users
         points: 0, // Start with 0 points
-        level: 'Starter' // Start at level 1
+        level: 'Starter', // Start at level 1
+        earnedBadges: []
     };
 
     const newUser: User = {

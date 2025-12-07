@@ -33,6 +33,7 @@ export interface DailyCheckIn {
   mood: number; // 1-10
   stress: number; // 1-10
   sleep: number; // 1-10
+  steps?: number; // New field for steps
 }
 
 export interface MealEntry {
@@ -56,6 +57,7 @@ export interface UserProfile {
   // Gamification fields
   points: number;
   level: string; // 'Starter' | 'Doorzetter' | 'Krachtpatser' | 'VitaMeester'
+  earnedBadges: string[]; // Array of badge IDs
 
   activeChallengeId?: string | null; // Track the single active challenge
   activeChallengeStartDate?: string | null; // ISO Date string when the challenge was started
